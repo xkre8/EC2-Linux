@@ -1,3 +1,4 @@
+```bash
 PostgreSQL client
 MySQL client
 Oracle client
@@ -7,3 +8,4 @@ DocumentDB (Docker containers)
 DynamoDB (Docker containers)
 Aurora PostgreSQL/MySQL (Docker containers)
 AWS CLI
+```
