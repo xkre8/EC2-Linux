@@ -1,0 +1,21 @@
+---
+# โฟลเดอร์เก็บไฟล์บนเซิร์ฟเวอร์ (ปรับตามจริง)
+package_dir: /home/ec2-user/.nuntawat/
+
+# รายการแพ็กเกจที่ต้องติดตั้ง
+packages:
+  - name: mysql-shell
+    file: mysql-shell-8.4.5-1.el9.x86_64.rpm
+    type: rpm
+
+  - name: mariadb-connector-odbc
+    file: mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm
+    type: rpm
+
+  - name: oracle-instantclient-basic
+    file: oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm
+    type: rpm
+
+  - name: mongosh
+    file: mongosh-2.5.0-linux-x64-openssl3.tgz
+    type: tgz

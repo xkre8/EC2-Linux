@@ -1,0 +1,42 @@
+---
+- name: ติดตั้งไฟล์ RPM ทั้งหมด
+  yum:
+    name: "{{ package_dir }}/{{ item.file }}"
+    state: present
+  loop: "{{ packages }}"
+  when: item.type == 'rpm'
+
+- name: แตกไฟล์ TGZ (mongosh)
+  unarchive:
+    src: "{{ package_dir }}/{{ item.file }}"
+    dest: "/opt/{{ item.name }}"
+    remote_src: yes
+  loop: "{{ packages }}"
+  when: item.type == 'tgz'
+
+- name: สร้าง symlink ให้เรียกใช้ไบนารี mongosh ได้ตรงๆ
+  file:
+    src: "/opt/{{ item.name }}/bin/{{ item.name }}"
+    dest: "/usr/local/bin/{{ item.name }}"
+    state: link
+  loop: "{{ packages }}"
+  when: item.type == 'tgz'
+
+- name: เก็บคำสั่งตรวจสอบเวอร์ชันแต่ละแพ็กเกจ
+  vars:
+    version_cmd: >-
+      {% if item.type == 'rpm' %}
+      rpm -q {{ item.name }} --queryformat '%{VERSION}-%{RELEASE}\n'
+      {% else %}
+      {{ item.name }} --version
+      {% endif %}
+  shell: "{{ version_cmd }}"
+  register: version_results
+  loop: "{{ packages }}"
+
+- name: แสดงผลสรุปเวอร์ชันอย่างสวยงาม
+  debug:
+    msg: "✅ {{ packages[loop.index0].name }}: {{ item.stdout }}"
+  loop: "{{ version_results.results }}"
+  loop_control:
+    label: "{{ packages[loop.index0].name }}"

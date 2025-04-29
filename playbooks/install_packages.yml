@@ -1,0 +1,6 @@
+---
+- name: Install custom packages and report versions
+  hosts: servers
+  become: true
+  roles:
+    - install_files
