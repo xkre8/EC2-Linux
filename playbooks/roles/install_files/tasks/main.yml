@@ -1,4 +1,7 @@
+# roles/install_files/tasks/main.yml
+
 ---
+
 - name: ติดตั้งไฟล์ RPM ทั้งหมด
   yum:
     name: "{{ package_dir }}/{{ item.file }}"
@@ -6,7 +9,19 @@
   loop: "{{ packages }}"
   when: item.type == 'rpm'
 
-- name: แตกไฟล์ TGZ (mongosh)
+# == เพิ่มตรงนี้ ==
+- name: สร้างโฟลเดอร์ปลายทางสำหรับ TGZ unpack
+  file:
+    path: "/opt/{{ item.name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ packages }}"
+  when: item.type == 'tgz'
+  # ==================================
+
+- name: แตกไฟล์ TGZ ({{ item.name }})
   unarchive:
     src: "{{ package_dir }}/{{ item.file }}"
     dest: "/opt/{{ item.name }}"
