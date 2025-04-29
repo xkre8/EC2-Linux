@@ -9,33 +9,28 @@
   loop: "{{ packages }}"
   when: item.type == 'rpm'
 
-# == เพิ่มตรงนี้ ==
-- name: สร้างโฟลเดอร์ปลายทางสำหรับ TGZ unpack
-  file:
-    path: "/opt/{{ item.name }}"
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-  loop: "{{ packages }}"
-  when: item.type == 'tgz'
-  # ==================================
+# —————— ปรับตรงนี้ ——————
 
-- name: แตกไฟล์ TGZ ({{ item.name }})
+- name: แตกไฟล์ TGZ ทุกตัวไปไว้ที่ /opt
   unarchive:
     src: "{{ package_dir }}/{{ item.file }}"
-    dest: "/opt/{{ item.name }}"
+    dest: /opt
     remote_src: yes
+    # สร้างเงื่อนไขให้ข้ามถ้าแตกไปแล้ว
+    creates: "/opt/{{ item.file | regex_replace('\\.tgz$', '') }}"
   loop: "{{ packages }}"
   when: item.type == 'tgz'
 
-- name: สร้าง symlink ให้เรียกใช้ไบนารี mongosh ได้ตรงๆ
+- name: สร้าง symlink ให้เรียกใช้ไบนารีจาก TGZ
   file:
-    src: "/opt/{{ item.name }}/bin/{{ item.name }}"
+    src: "/opt/{{ item.file | regex_replace('\\.tgz$', '') }}/bin/{{ item.name }}"
     dest: "/usr/local/bin/{{ item.name }}"
     state: link
+    force: yes
   loop: "{{ packages }}"
   when: item.type == 'tgz'
+
+# ————————————————————
 
 - name: เก็บคำสั่งตรวจสอบเวอร์ชันแต่ละแพ็กเกจ
   vars:
