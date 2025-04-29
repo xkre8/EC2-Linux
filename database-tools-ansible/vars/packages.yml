@@ -1,0 +1,39 @@
+---
+# Variables for package installation
+# Enable or disable each package as needed
+
+# Temporary directory for downloading packages
+temp_dir: "/var/tmp/db_tools_packages"
+
+# Source server configuration - ไม่จำเป็นสำหรับ AAP เพราะไฟล์อยู่บน server เดียวกัน
+source_server:
+  path: "/home/ec2-user/.nuntawat"  # ตำแหน่งที่ไฟล์อยู่บน source server
+  user: "ec2-user"  # ผู้ใช้ที่เข้าถึงไฟล์ได้
+
+mysql_shell_package:
+  enabled: true
+  name: mysql-shell
+  version: "8.4.5"
+  file_name: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
+  local_path: "{{ temp_dir }}/mysql-shell-8.4.5-1.el9.x86_64.rpm"
+
+mariadb_odbc_package:
+  enabled: true
+  name: mariadb-connector-odbc
+  version: "3.2.5"
+  file_name: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+  local_path: "{{ temp_dir }}/mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+
+mongosh_package:
+  enabled: true
+  name: mongosh
+  version: "2.5.0"
+  file_name: "mongosh-2.5.0-linux-x64-openssl3.tgz"
+  local_path: "{{ temp_dir }}/mongosh-2.5.0-linux-x64-openssl3.tgz"
+
+oracle_client_package:
+  enabled: true
+  name: oracle-instantclient-basic
+  version: "23.7.0.25.01"
+  file_name: "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
+  local_path: "{{ temp_dir }}/oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"

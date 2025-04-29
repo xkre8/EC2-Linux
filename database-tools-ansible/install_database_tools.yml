@@ -1,0 +1,143 @@
+---
+# install_database_tools.yml
+- name: Install database tools and clients
+  hosts: all
+  become: true
+  vars_files:
+    - vars/packages.yml
+
+  pre_tasks:
+    - name: Create temporary directory for package files
+      ansible.builtin.file:
+        path: "{{ temp_dir }}"
+        state: directory
+        mode: '0777'  # ตั้งค่าสิทธิ์ให้เขียนได้
+      become: true
+      
+    - name: Copy package files from source server 
+      ansible.builtin.copy:
+        src: "{{ source_server.path }}/{{ item.file_name }}"
+        dest: "{{ temp_dir }}/{{ item.file_name }}"
+        mode: '0644'
+        remote_src: true
+      loop:
+        - { file_name: "{{ mysql_shell_package.file_name }}", enabled: "{{ mysql_shell_package.enabled }}" }
+        - { file_name: "{{ mariadb_odbc_package.file_name }}", enabled: "{{ mariadb_odbc_package.enabled }}" }
+        - { file_name: "{{ mongosh_package.file_name }}", enabled: "{{ mongosh_package.enabled }}" }
+        - { file_name: "{{ oracle_client_package.file_name }}", enabled: "{{ oracle_client_package.enabled }}" }
+      when: item.enabled | bool
+      become: true
+
+  tasks:
+    - name: Install MySQL Shell RPM
+      ansible.builtin.yum:
+        name: "{{ mysql_shell_package.local_path }}"
+        state: present
+        disable_gpg_check: yes
+      when: mysql_shell_package.enabled
+      register: mysql_shell_installed
+
+    - name: Install MariaDB ODBC Connector RPM
+      ansible.builtin.yum:
+        name: "{{ mariadb_odbc_package.local_path }}"
+        state: present
+        disable_gpg_check: yes
+      when: mariadb_odbc_package.enabled
+      register: mariadb_odbc_installed
+
+    - name: Create directory for MongoDB Shell
+      ansible.builtin.file:
+        path: "/opt/mongosh"
+        state: directory
+        mode: '0755'
+      when: mongosh_package.enabled
+
+    - name: Extract MongoDB Shell tgz
+      ansible.builtin.unarchive:
+        src: "{{ mongosh_package.local_path }}"
+        dest: "/opt/mongosh"
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+      when: mongosh_package.enabled
+      register: mongosh_installed
+
+    - name: Create symlink for mongosh
+      ansible.builtin.file:
+        src: "/opt/mongosh/bin/mongosh"
+        dest: "/usr/local/bin/mongosh"
+        state: link
+      when: mongosh_package.enabled
+
+    - name: Install Oracle Instant Client RPM  
+      ansible.builtin.yum:
+        name: "{{ oracle_client_package.local_path }}"
+        state: present
+        disable_gpg_check: yes
+      when: oracle_client_package.enabled
+      register: oracle_client_installed
+
+    - name: Configure environment for Oracle Instant Client
+      ansible.builtin.lineinfile:
+        path: /etc/profile.d/oracle-instantclient.sh
+        line: "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/oracle/23.7/client64/lib"
+        create: yes
+        mode: '0644'
+      when: oracle_client_package.enabled
+
+    - name: Show versions
+      block:
+        - name: Get MySQL Shell version
+          ansible.builtin.command: mysqlsh --version
+          register: mysql_shell_version
+          changed_when: false
+          when: mysql_shell_package.enabled
+
+        - name: Get MariaDB ODBC version
+          ansible.builtin.command: odbcinst -q -d -n MariaDB
+          register: mariadb_odbc_version
+          changed_when: false
+          when: mariadb_odbc_package.enabled
+
+        - name: Get MongoDB Shell version
+          ansible.builtin.command: mongosh --version
+          register: mongosh_version
+          changed_when: false
+          when: mongosh_package.enabled
+
+        - name: Get Oracle Client version
+          ansible.builtin.command: ls -la /usr/lib/oracle/23.7/client64/lib/
+          register: oracle_client_version
+          changed_when: false
+          when: oracle_client_package.enabled
+
+    - name: Display versions in formatted output
+      ansible.builtin.debug:
+        msg: |
+          ----------------------------------------
+          DATABASE TOOLS INSTALLATION REPORT
+          ----------------------------------------
+          {% if mysql_shell_package.enabled %}
+          MySQL Shell:
+            Status: {{ 'Installed' if mysql_shell_installed.changed else 'Already installed' }}
+            Version: {{ mysql_shell_version.stdout_lines[0] | default('Unknown') }}
+          {% endif %}
+          
+          {% if mariadb_odbc_package.enabled %}
+          MariaDB ODBC:
+            Status: {{ 'Installed' if mariadb_odbc_installed.changed else 'Already installed' }}
+            Driver info: 
+            {{ mariadb_odbc_version.stdout_lines | default(['Unknown']) | join('\n            ') }}
+          {% endif %}
+          
+          {% if mongosh_package.enabled %}
+          MongoDB Shell:
+            Status: {{ 'Installed' if mongosh_installed.changed else 'Already installed' }}
+            Version: {{ mongosh_version.stdout_lines[0] | default('Unknown') }}
+          {% endif %}
+          
+          {% if oracle_client_package.enabled %}
+          Oracle Instant Client:
+            Status: {{ 'Installed' if oracle_client_installed.changed else 'Already installed' }}
+            Path: /usr/lib/oracle/23.7/client64/lib/
+          {% endif %}
+          ----------------------------------------
