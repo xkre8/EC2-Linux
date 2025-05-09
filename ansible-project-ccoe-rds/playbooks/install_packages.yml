@@ -4,7 +4,7 @@
   #connection: local
   become: yes
   
-  # roles:
+  roles:
   #   - role: aws_db_client_setup
   #     vars:
   #       download_path: "/tmp/aws-rds"
