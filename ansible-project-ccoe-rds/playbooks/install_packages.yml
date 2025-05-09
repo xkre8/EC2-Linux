@@ -35,17 +35,17 @@
             creates: "/opt/mongodb/bin/mongosh"
             version_command: "/opt/mongodb/bin/mongosh --version"
 
-          - name: "unixODBC"
-            file: "unixODBC-2.3.11-1.rh.x86_64.rpm"  # You'll need to download this file
-            type: "rpm"
-            source_dir: "/tmp/aws-rds"
-            disable_gpg_check: true
+          # - name: "unixODBC"
+          #   file: "unixODBC-2.3.11-1.rh.x86_64.rpm"  # You'll need to download this file
+          #   type: "rpm"
+          #   source_dir: "/tmp/aws-rds"
+          #   disable_gpg_check: true
 
-          - name: "unixODBC-Dev"
-            file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"  # You'll need to download this file
-            type: "rpm"
-            source_dir: "/tmp/aws-rds"
-            disable_gpg_check: true
+          # - name: "unixODBC-Dev"
+          #   file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"  # You'll need to download this file
+          #   type: "rpm"
+          #   source_dir: "/tmp/aws-rds"
+          #   disable_gpg_check: true
           
           - name: "mssql-tools"
             file: "mssql-tools-17.10.1.1-1.x86_64.rpm"
