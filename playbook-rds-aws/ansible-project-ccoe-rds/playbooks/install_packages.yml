@@ -4,18 +4,18 @@
   hosts: all
   #connection: local
   become: yes  
-  vars:
-    nexus_files:
-      - "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-      - "mongosh-2.5.0-linux-x64-openssl3.tgz"
-      - "mssql-tools-17.10.1.1-1.x86_64.rpm"
-      - "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
-      - "pgdg-redhat-repo-latest.noarch.rpm"
-      - "mysql-shell-8.4.5-1.el9.x86_64.rpm"
+  # vars:
+  #   nexus_files:
+  #     - "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+  #     - "mongosh-2.5.0-linux-x64-openssl3.tgz"
+  #     - "mssql-tools-17.10.1.1-1.x86_64.rpm"
+  #     - "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
+  #     - "pgdg-redhat-repo-latest.noarch.rpm"
+  #     - "mysql-shell-8.4.5-1.el9.x86_64.rpm"
     
-    show_detailed_output: true
-    output_file: "/tmp/aws-rds/package_installation_report.txt"
-    download_path: "/tmp/aws-rds/"
+  #   show_detailed_output: true
+  #   output_file: "/tmp/aws-rds/package_installation_report.txt"
+  #   download_path: "/tmp/aws-rds/"
   
   tasks:
   #   # First create the download directory to ensure it exists
