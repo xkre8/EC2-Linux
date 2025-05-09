@@ -1,0 +1,25 @@
+# Package Installation Report for {{ package_item.name }} - {{ ansible_date_time.date }}
+
+## System Information
+Hostname: {{ ansible_hostname }}
+OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+
+## Package
+Name: {{ package_item.name }}
+File: {{ package_item.file }}
+Type: {{ package_item.type | default('rpm') }}
+{% if package_item.type | default('rpm') == 'rpm' %}
+Installation Status: {{ "Newly installed" if rpm_install is defined and rpm_install.changed else "Already installed" }}
+{% else %}
+Installation Status: {{ "Newly extracted" if extract_result is defined and extract_result.changed else "Already exists" }}
+{% endif %}
+
+## Version Information
+{% if package_item.version_check_cmd is defined %}
+{{ package_info.version_info }}
+{% else %}
+Version check not configured for this package
+{% endif %}
+
+## Details
+{{ package_info.stdout if package_info is defined else "Information not available" }}
