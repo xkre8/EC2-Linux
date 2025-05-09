@@ -21,36 +21,42 @@
         disable_gpg_check: true
         report_file: "/tmp/aws-rds/installation_report.txt"
         packages:
-          # - name: "mariadb-connector-odbc"
-          #   file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-          #   type: "rpm"
-          #   source_dir: "/tmp/aws-rds"
-          #   version_command: "odbcinst -q -d -n MariaDB"
+          - name: "mariadb-connector-odbc"
+            file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+            type: "rpm"
+            source_dir: "/tmp/aws-rds"
+            version_command: "odbcinst -q -d -n MariaDB"
           
-          # - name: "mongosh"
-          #   file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
-          #   type: "tgz"
-          #   source_dir: "/tmp/aws-rds"
-          #   extract_path: "/opt/mongodb"
-          #   creates: "/opt/mongodb/bin/mongosh"
-          #   version_command: "/opt/mongodb/bin/mongosh --version"
+          - name: "mongosh"
+            file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
+            type: "tgz"
+            source_dir: "/tmp/aws-rds"
+            extract_path: "/opt/mongodb"
+            creates: "/opt/mongodb/bin/mongosh"
+            version_command: "/opt/mongodb/bin/mongosh --version"
 
-          # - name: "msodbcsql17"
-          #   file: "msodbcsql17-17.10.1.1-1.x86_64.rpm"  # You'll need to download this file
-          #   type: "rpm"
-          #   source_dir: "/tmp/aws-rds"
-          #   disable_gpg_check: true
+          - name: "unixODBC"
+            file: "unixODBC-2.3.11-1.rh.x86_64.rpm"  # You'll need to download this file
+            type: "rpm"
+            source_dir: "/tmp/aws-rds"
+            disable_gpg_check: true
+
+          - name: "unixODBC-Dev"
+            file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"  # You'll need to download this file
+            type: "rpm"
+            source_dir: "/tmp/aws-rds"
+            disable_gpg_check: true
           
-          # - name: "mssql-tools"
-          #   file: "mssql-tools-17.10.1.1-1.x86_64.rpm"
-          #   type: "rpm"
-          #   source_dir: "/tmp/aws-rds"
-          #   disable_gpg_check: true
+          - name: "mssql-tools"
+            file: "mssql-tools-17.10.1.1-1.x86_64.rpm"
+            type: "rpm"
+            source_dir: "/tmp/aws-rds"
+            disable_gpg_check: true
           
-          # - name: "oracle-instantclient-basic"
-          #   file: "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
-          #   type: "rpm"
-          #   source_dir: "/tmp/aws-rds"
+          - name: "oracle-instantclient-basic"
+            file: "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
+            type: "rpm"
+            source_dir: "/tmp/aws-rds"
           
           - name: "pgdg-redhat-repo"
             file: "pgdg-redhat-repo-latest.noarch.rpm"
