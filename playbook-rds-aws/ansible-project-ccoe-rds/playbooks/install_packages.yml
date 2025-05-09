@@ -16,7 +16,7 @@
   #   output_file: "/tmp/aws-rds/package_installation_report.txt"
   #   download_path: "/tmp/aws-rds/"
   
-  # tasks:
+  tasks:
   #   # First create the download directory to ensure it exists
   #   - name: Create destination directory
   #     ansible.builtin.file:
