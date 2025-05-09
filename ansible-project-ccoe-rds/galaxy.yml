@@ -1,0 +1,15 @@
+---
+namespace: aws.rds
+name: db-clients
+version: 1.0.0
+readme: README.md
+authors:
+  - xker8
+description: install DB clients
+license:
+  - GPL
+tags:
+  - packaging
+  - nesux
+  - rds
+repository: https://gitlab.krungsri.net/automation/ansible/automation-projects/bay-ccoe/ansible-project-ccoe-rds.git
