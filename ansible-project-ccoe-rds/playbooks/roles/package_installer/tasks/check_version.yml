@@ -1,0 +1,24 @@
+# Tasks for checking software version after installation
+---
+- name: Check if version command is specified
+  ansible.builtin.set_fact:
+    has_version_command: "{{ package_item.version_command is defined }}"
+
+- name: Run version check command if provided
+  ansible.builtin.shell: "{{ package_item.version_command }}"
+  register: version_output
+  changed_when: false
+  failed_when: false
+  when: has_version_command | bool
+
+- name: Display version information
+  ansible.builtin.debug:
+    msg: "{{ package_item.name }} version: {{ version_output.stdout | default('Unknown - version command not provided') }}"
+  when: show_detailed_output | bool
+
+- name: Append package info to report
+  ansible.builtin.lineinfile:
+    path: "{{ report_file }}"
+    line: "{{ package_item.name }}: Installation {{ 'successful' if rpm_install.changed | default(extract_result.changed) | default(false) else 'already complete' }}"
+    insertafter: EOF
+  when: report_file is defined

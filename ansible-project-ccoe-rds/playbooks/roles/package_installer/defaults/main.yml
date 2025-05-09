@@ -1,0 +1,9 @@
+
+---
+show_detailed_output: true
+temp_download_dir: "/tmp/package_downloads"
+
+disable_gpg_check: false
+
+report_file: "/tmp/package_installation_report.txt"
+packages: []

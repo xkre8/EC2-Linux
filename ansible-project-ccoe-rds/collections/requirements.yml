@@ -1,0 +1,6 @@
+---
+collections:
+  - name: ks.utils
+    source: https://gitlab.krungsri.net/automation/ansible/public-collections/ks.utils.git
+    type: git
+    version: "main"
