@@ -51,6 +51,10 @@
     disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
   register: rpm_install
   when: rpm_check.rc != 0
+  
+- name: Debug package_source_path
+  debug:
+    msg: "Installing package from {{ package_source_path }}"
 
 - name: Get installed package information
   shell: |
