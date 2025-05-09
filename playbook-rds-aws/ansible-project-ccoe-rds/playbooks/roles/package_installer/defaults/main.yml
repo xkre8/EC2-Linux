@@ -13,13 +13,6 @@ packages:
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "rpm -q mssql-tools"
-
-  - name: postgresql
-    file: "pgdg-redhat-repo-latest.noarch.rpm"
-    source_dir:  "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    version_check_cmd: "rpm -q pgdg-redhat-repo"
   
   - name: mariadb
     file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
