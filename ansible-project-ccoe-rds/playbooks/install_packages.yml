@@ -4,16 +4,16 @@
   connection: local
   become: yes
   
-  roles:
-    - role: aws_db_client_setup
-      vars:
-        download_path: "/tmp/aws-rds"
-        nexus_files:
-          - "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-          - "mongosh-2.5.0-linux-x64-openssl3.tgz"
-          - "mssql-tools-17.10.1.1-1.x86_64.rpm"
-          - "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
-          - "pgdg-redhat-repo-latest.noarch.rpm"
+  # roles:
+  #   - role: aws_db_client_setup
+  #     vars:
+  #       download_path: "/tmp/aws-rds"
+  #       nexus_files:
+  #         - "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+  #         - "mongosh-2.5.0-linux-x64-openssl3.tgz"
+  #         - "mssql-tools-17.10.1.1-1.x86_64.rpm"
+  #         - "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
+  #         - "pgdg-redhat-repo-latest.noarch.rpm"
     
     - role: package_installer
       vars:
