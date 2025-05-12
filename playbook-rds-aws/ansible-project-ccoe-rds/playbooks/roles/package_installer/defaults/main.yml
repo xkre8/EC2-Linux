@@ -12,6 +12,7 @@ packages:
     source_dir:  "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
+    ignore_deps: true  # เพิ่มตัวเลือกนี้เพื่อข้าม dependencies สำหรับ mssql-tools
     version_check_cmd: "rpm -q mssql-tools"
 
   - name: mssql-devel
@@ -19,6 +20,7 @@ packages:
     source_dir:  "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
+    ignore_deps: true
     version_check_cmd: "rpm -q mssql-tools"
 
   - name: mssql-unixODBC
@@ -26,6 +28,7 @@ packages:
     source_dir:  "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
+    ignore_deps: true
     version_check_cmd: "rpm -q mssql-tools"
 
   - name: postgresql17
@@ -33,6 +36,7 @@ packages:
     source_dir:  "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
+    ignore_deps: true  # เพิ่มตัวเลือกนี้เพื่อข้าม dependencies สำหรับ PostgreSQL
     version_check_cmd: "psql --version"
   
   - name: mariadb
@@ -40,6 +44,7 @@ packages:
     source_dir:  "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
+    ignore_deps: true
     version_check_cmd: "odbcinst -q -d"  
   
   - name: oracle-instantclient-basic
@@ -47,6 +52,7 @@ packages:
     source_dir:  "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
+    ignore_deps: true
     version_check_cmd: "ls -la /usr/lib/oracle/23.7.0.25.01/client64/lib" 
 
   - name: my-mongosh
@@ -61,6 +67,4 @@ output_file: "/tmp/installation_report.txt"
 
 temp_download_dir: "/tmp/downloads"
 
-
 disable_gpg_check: false
-
