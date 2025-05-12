@@ -7,29 +7,29 @@ packages:
     disable_gpg_check: true
     version_check_cmd: "mysql-shell --version"
 
-  - name: mssql-tools
-    file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
-    source_dir:  "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    ignore_deps: true  # เพิ่มตัวเลือกนี้เพื่อข้าม dependencies สำหรับ mssql-tools
-    version_check_cmd: "rpm -q mssql-tools"
+  # - name: mssql-tools
+  #   file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
+  #   source_dir:  "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   ignore_deps: true  # เพิ่มตัวเลือกนี้เพื่อข้าม dependencies สำหรับ mssql-tools
+  #   version_check_cmd: "rpm -q mssql-tools"
 
-  - name: mssql-devel
-    file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
-    source_dir:  "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    ignore_deps: true
-    version_check_cmd: "rpm -q mssql-tools"
+  # - name: mssql-devel
+  #   file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
+  #   source_dir:  "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   ignore_deps: true
+  #   version_check_cmd: "rpm -q mssql-tools"
 
-  - name: mssql-unixODBC
-    file: "unixODBC-2.3.11-1.rh.x86_64.rpm"
-    source_dir:  "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    ignore_deps: true
-    version_check_cmd: "rpm -q mssql-tools"
+  # - name: mssql-unixODBC
+  #   file: "unixODBC-2.3.11-1.rh.x86_64.rpm"
+  #   source_dir:  "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   ignore_deps: true
+  #   version_check_cmd: "rpm -q mssql-tools"
 
   - name: postgresql17
     file: "postgresql17-17.4-1PGDG.rhel9.x86_64.rpm"
