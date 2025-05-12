@@ -33,7 +33,7 @@
   fail:
     msg: "Package file {{ package_source_path }} does not exist!"
   when: not package_file_check.stat.exists
-  
+
 - name: Check if package is already installed
   command: rpm -q {{ package_item.name }}
   register: rpm_check
@@ -87,22 +87,20 @@
       register: package_info
       changed_when: false
   
-  - name: Display package information
-    debug:
-      var: package_info.stdout_lines
+- name: Display package information
+  debug:
+    var: package_info.stdout_lines
   
-  - name: Version check
-    block:
-      - name: Run version check command
-        shell: "{{ package_item.version_check_cmd }}"
-        register: version_check
-        changed_when: false
-        failed_when: false
+- name: Version check
+  block:
+    - name: Run version check command
+      shell: "{{ package_item.version_check_cmd }}"
+      register: version_check
+      changed_when: false
+      failed_when: false
       
-      - name: Display version
-        debug:
-          msg: "Version check for {{ package_item.name }}: {{ version_check.stdout }}"
-        when: version_check.rc == 0
-    when: package_item.version_check_cmd is defined
-
-  when: show_detailed_output | bool and rpm_check.rc != 0
+    - name: Display version
+      debug:
+         msg: "Version check for {{ package_item.name }}: {{ version_check.stdout }}"
+      when: version_check.rc == 0
+  when: package_item.version_check_cmd is defined
