@@ -1,7 +1,6 @@
-# process_rpm.yml
 ---
 - block:
-    - name: Download RPM package if URL is provided
+    - name: Download package if URL is provided
       get_url:
         url: "{{ package_item.url }}"
         dest: "{{ temp_download_dir }}/{{ package_item.file }}"
@@ -23,68 +22,76 @@
     package_source_path: "{{ temp_download_dir }}/{{ package_item.file }}"
   when: package_item.url is defined
 
-- name: Check if RPM file exists
+- name: Check if package file exists
   stat:
     path: "{{ package_source_path }}"
-  register: rpm_file_check
+  register: package_file_check
 
-- name: Fail if RPM file does not exist
+- name: Fail if package file does not exist
   fail:
-    msg: "RPM file {{ package_source_path }} does not exist!"
-  when: not rpm_file_check.stat.exists
+    msg: "Package file {{ package_source_path }} does not exist!"
+  when: not package_file_check.stat.exists
 
-- name: Check if RPM is already installed
-  command: rpm -q {{ package_item.name }}
-  register: rpm_check
+- name: Extract TGZ package if needed
+  unarchive:
+    src: "{{ package_source_path }}"
+    dest: "{{ package_item.extract_path | default(temp_download_dir) }}"
+    remote_src: yes
+  when: package_item.type == 'tgz'
+
+- name: Check if package is already installed
+  shell: "{{ package_item.version_check_cmd }}"
+  register: package_check
   failed_when: false
   changed_when: false
+  ignore_errors: true
 
-- name: Import GPG key if provided
-  rpm_key:
-    key: "{{ package_item.gpg_key }}"
-    state: present
-  when: package_item.gpg_key is defined
-
-- name: Install RPM package from local file only
+- name: Install RPM package
   yum:
     name: "{{ package_source_path }}"
     state: present
-    disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
-    disablerepo: "*"
-  register: rpm_install
-  when: rpm_check.rc != 0
+    disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(true)) }}"
+  register: "rpm_install_{{ package_index }}"
+  when: package_item.type == 'rpm' and package_check.rc != 0
 
-- name: Debug package_source_path
-  debug:
-    msg: "Installing package from {{ package_source_path }}"
+- name: Handle installation of non-standard package types
+  block:
+    - name: Install mongosh 
+      copy:
+        src: "{{ package_source_path | replace('.tgz', '-linux-x64-openssl3') }}"
+        dest: "/opt/my-app/"
+        remote_src: yes
+        mode: '0755'
+      when: package_item.type == 'tgz' and 'mongosh' in package_item.name
+  when: package_item.type != 'rpm'
 
-- name: Get installed package information
-  shell: |
-    echo "===== PACKAGE INFORMATION ====="
-    rpm -qi {{ package_item.name }} | grep -E 'Name|Version|Release|Description'
-    echo ""
-    echo "===== SERVICE STATUS ====="
-    if systemctl list-unit-files | grep -q {{ package_item.name }}; then
-      systemctl status {{ package_item.name }} 2>/dev/null || echo "Service exists but may not be running"
-    else
-      echo "No systemd service found for {{ package_item.name }}"
-      echo "Looking for related services..."
-      rpm -ql {{ package_item.name }} | grep -E '\.service$' | while read service_file; do
-        service_name=$(basename "$service_file")
-        echo "Found service file: $service_name"
-        systemctl status ${service_name} 2>/dev/null || echo "Service ${service_name} exists but may not be running"
-      done
-    fi
-    echo ""
-    echo "===== FILES INSTALLED ====="
-    rpm -ql {{ package_item.name }} | head -10
-    if [ $(rpm -ql {{ package_item.name }} | wc -l) -gt 10 ]; then
-      echo "... and $(( $(rpm -ql {{ package_item.name }} | wc -l) - 10 )) more files"
-    fi
-    echo ""
-  register: package_info
-  changed_when: false
-  when: show_detailed_output | bool
-
-- name: Include version check
-  include_tasks: check_version.yml
+- name: Detailed package information
+  block:
+    - name: Get installed package information
+      shell: |
+        echo "===== PACKAGE INFORMATION ====="
+        if [ "{{ package_item.type }}" == "rpm" ]; then
+          rpm -qi {{ package_item.name }} | grep -E 'Name|Version|Release|Description'
+        else
+          echo "Package type is not RPM"
+        fi
+        echo ""
+        echo "===== VERSION CHECK ====="
+        {{ package_item.version_check_cmd }}
+        echo ""
+        echo "===== FILES INSTALLED ====="
+        if [ "{{ package_item.type }}" == "rpm" ]; then
+          rpm -ql {{ package_item.name }} | head -10
+          if [ $(rpm -ql {{ package_item.name }} | wc -l) -gt 10 ]; then
+            echo "... and $(( $(rpm -ql {{ package_item.name }} | wc -l) - 10 )) more files"
+          fi
+        else
+          ls -la "{{ package_item.extract_path | default(temp_download_dir) }}"
+        fi
+      register: package_info
+      changed_when: false
+      when: show_detailed_output | bool
+  rescue:
+    - name: Handle version check or info gathering errors
+      debug:
+        msg: "Could not gather detailed information for {{ package_item.name }}"
