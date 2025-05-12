@@ -23,7 +23,7 @@ packages:
     version_check_cmd: "rpm -q mssql-tools"
 
   - name: mssql-devel
-    # file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
+    file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
@@ -37,7 +37,7 @@ packages:
     # version_check_cmd: "rpm -q unixODBC"
 
   - name: mssql-msodbcsql18
-    # file: "msodbcsql18-18.1.1.1-1.x86_64.rpm"
+    file: "msodbcsql18-18.1.1.1-1.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
