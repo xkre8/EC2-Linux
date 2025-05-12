@@ -36,6 +36,13 @@ packages:
     disable_gpg_check: true
     version_check_cmd: "rpm -q unixODBC"
 
+  - name: mssql-msodbcsql18
+    file: "msodbcsql18-18.1.1.1-1.x86_64.rpm"
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q unixODBC"
+
   - name: postgresql17
     file: "postgresql17-17.4-1PGDG.rhel9.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
