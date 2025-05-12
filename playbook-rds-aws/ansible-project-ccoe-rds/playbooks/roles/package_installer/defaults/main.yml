@@ -8,6 +8,13 @@ packages:
     disable_gpg_check: true
     version_check_cmd: "mysql-shell --version"
 
+  - name: msodbcsql18
+    file: "msodbcsql18-18.0.1.1-1.x86_64.rpm"    # ดาวน์โหลดไฟล์นี้จาก Microsoft แล้ววางไว้ใน /tmp/aws-rds/
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q msodbcsql18"
+
   - name: mssql-tools
     file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
@@ -20,14 +27,14 @@ packages:
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
-    version_check_cmd: "rpm -q mssql-tools"
+    version_check_cmd: "rpm -q unixODBC-devel"
 
   - name: mssql-unixODBC
     file: "unixODBC-2.3.11-1.rh.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
-    version_check_cmd: "rpm -q mssql-tools"
+    version_check_cmd: "rpm -q unixODBC"
 
   - name: postgresql17
     file: "postgresql17-17.4-1PGDG.rhel9.x86_64.rpm"
