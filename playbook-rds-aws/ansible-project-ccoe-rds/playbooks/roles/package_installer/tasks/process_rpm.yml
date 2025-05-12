@@ -1,38 +1,39 @@
 ---
-# Playbook for processing and installing RPM packages
+# Improved RPM Package Processing Playbook
 
-- block:
-    - name: Download RPM package if URL is provided
-      get_url:
-        url: "{{ package_item.url }}"
-        dest: "{{ temp_download_dir }}/{{ package_item.file }}"
-        mode: '0644'
-      register: download_result
-      when: package_item.url is defined
-  rescue:
-    - name: Report download failure
-      fail:
-        msg: "Failed to download {{ package_item.file }} from {{ package_item.url }}"
-
-- name: Set source path for local package
-  set_fact:
-    package_source_path: "{{ package_item.source_dir | default(packages[0].source_dir) }}/{{ package_item.file }}"
-  when: package_item.url is not defined
-
-- name: Set source path for downloaded package
-  set_fact:
-    package_source_path: "{{ temp_download_dir }}/{{ package_item.file }}"
-  when: package_item.url is defined
+- name: Validate and set package source path
+  block:
+    - name: Set source path for local package
+      set_fact:
+        package_source_path: "{{ package_item.source_dir | default(packages_dir, true) }}/{{ package_item.file }}"
+      
+    - name: Debug package source path
+      debug:
+        msg: "Attempting to install package from path: {{ package_source_path }}"
 
 - name: Check if package file exists
   stat:
     path: "{{ package_source_path }}"
   register: package_file_check
 
-- name: Fail if package file does not exist
-  fail:
-    msg: "Package file {{ package_source_path }} does not exist!"
-  when: not package_file_check.stat.exists
+- name: Detailed file existence check and error handling
+  block:
+    - name: List available files in source directory
+      shell: "ls -l {{ package_item.source_dir | default(packages_dir, true) }}"
+      register: directory_contents
+      when: not package_file_check.stat.exists
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with detailed error if package file does not exist
+      fail:
+        msg: |
+          ERROR: Package file not found!
+          - Expected file: {{ package_item.file }}
+          - Expected path: {{ package_source_path }}
+          - Available files in directory:
+          {{ directory_contents.stdout | default('No directory listing available') }}
+      when: not package_file_check.stat.exists
 
 - name: Check if package is already installed
   command: rpm -q {{ package_item.name }}
@@ -54,29 +55,12 @@
   register: rpm_install
   when: rpm_check.rc != 0
   
-- name: Debug package installation
-  debug:
-    msg: "Installing package {{ package_item.name }} from {{ package_source_path }}"
-
-- name: Get detailed package information
+- name: Detailed package information gathering
   block:
     - name: Retrieve package details
       shell: |
         echo "===== PACKAGE INFORMATION ====="
         rpm -qi {{ package_item.name }} | grep -E 'Name|Version|Release|Description'
-        echo ""
-        echo "===== SERVICE STATUS ====="
-        if systemctl list-unit-files | grep -q {{ package_item.name }}; then
-          systemctl status {{ package_item.name }} 2>/dev/null || echo "Service exists but may not be running"
-        else
-          echo "No systemd service found for {{ package_item.name }}"
-          # Try to find related services
-          rpm -ql {{ package_item.name }} | grep -E '\.service$' | while read service_file; do
-            service_name=$(basename "$service_file")
-            echo "Found service file: $service_name"
-            systemctl status ${service_name} 2>/dev/null || echo "Service ${service_name} exists but may not be running"
-          done
-        fi
         echo ""
         echo "===== INSTALLED FILES ====="
         rpm -ql {{ package_item.name }} | head -10
@@ -86,21 +70,25 @@
         fi
       register: package_info
       changed_when: false
-  
-- name: Display package information
-  debug:
-    var: package_info.stdout_lines
-  
-- name: Version check
-  block:
-    - name: Run version check command
-      shell: "{{ package_item.version_check_cmd }}"
-      register: version_check
-      changed_when: false
-      failed_when: false
-      
-    - name: Display version
+      when: rpm_check.rc != 0
+
+    - name: Display package information
       debug:
-         msg: "Version check for {{ package_item.name }}: {{ version_check.stdout }}"
-      when: version_check.rc == 0
-  when: package_item.version_check_cmd is defined
+        var: package_info.stdout_lines
+      when: rpm_check.rc != 0 and package_info is defined
+
+    - name: Version check
+      block:
+        - name: Run version check command
+          shell: "{{ package_item.version_check_cmd }}"
+          register: version_check
+          changed_when: false
+          failed_when: false
+        
+        - name: Display version
+          debug:
+            msg: "Version check for {{ package_item.name }}: {{ version_check.stdout }}"
+          when: version_check.rc == 0
+      when: package_item.version_check_cmd is defined
+
+  when: show_detailed_output | bool
