@@ -1,54 +1,63 @@
+# main.yml
 ---
 packages:
   - name: mysql-shell
     file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
+    disable_gpg_check: true
     version_check_cmd: "mysql-shell --version"
 
-  - name: mssql-tools18
+  - name: mssql-tools
     file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
-    version_check_cmd: "rpm -q mssql-tools18"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q mssql-tools"
 
-  - name: unixODBC-devel
+  - name: mssql-devel
     file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
-    version_check_cmd: "rpm -q unixODBC-devel"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q mssql-tools"
 
-  - name: unixODBC
+  - name: mssql-unixODBC
     file: "unixODBC-2.3.11-1.rh.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
-    version_check_cmd: "rpm -q unixODBC"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q mssql-tools"
 
   - name: postgresql17
     file: "postgresql17-17.4-1PGDG.rhel9.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
-    version_check_cmd: "rpm -q postgresql17"
-  
-  - name: mariadb-connector-odbc
+    disable_gpg_check: true
+    version_check_cmd: "psql --version"
+
+  - name: mariadb
     file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
-    version_check_cmd: "odbcinst -q -d"  
-  
+    disable_gpg_check: true
+    version_check_cmd: "odbcinst -q -d"
+
   - name: oracle-instantclient-basic
     file: "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
-    version_check_cmd: "ls -la /usr/lib/oracle/23.7.0.25.01/client64/lib" 
+    disable_gpg_check: true
+    version_check_cmd: "ls -la /usr/lib/oracle/23.7.0.25.01/client64/lib"
 
-  - name: mongosh
+  - name: my-mongosh
     file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
     source_dir: "/tmp/aws-rds/"
     type: "tgz"
-    extract_path: "/opt/mongosh"
-    version_check_cmd: "/opt/mongosh/bin/mongosh --version"
+    extract_path: "/tmp/aws-rds/"
+    version_check_cmd: "/opt/my-app/mongosh-2.5.0-linux-x64/bin/mongosh --version"
 
 show_detailed_output: true
 output_file: "/tmp/installation_report.txt"
 temp_download_dir: "/tmp/downloads"
+disable_gpg_check: false
