@@ -49,6 +49,7 @@
     name: "{{ package_source_path }}"
     state: present
     disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
+    disable_repo: "*" 
   register: rpm_install
   when: rpm_check.rc != 0
   
