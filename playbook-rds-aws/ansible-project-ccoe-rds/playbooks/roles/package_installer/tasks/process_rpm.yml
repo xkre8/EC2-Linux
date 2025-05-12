@@ -1,39 +1,32 @@
 ---
-# Improved RPM Package Processing Playbook
+# Flexible RPM Package Processing Playbook
 
-- name: Validate and set package source path
+- name: Find matching RPM package
   block:
-    - name: Set source path for local package
+    - name: Search for matching package file
+      find:
+        paths: "{{ package_item.source_dir | default(packages_dir, true) }}"
+        patterns: "{{ package_item.name }}*.rpm"
+        use_regex: no
+      register: matching_packages
+
+    - name: Set package source path
       set_fact:
-        package_source_path: "{{ package_item.source_dir | default(packages_dir, true) }}/{{ package_item.file }}"
-      
-    - name: Debug package source path
-      debug:
-        msg: "Attempting to install package from path: {{ package_source_path }}"
+        package_source_path: "{{ matching_packages.files[0].path }}"
+      when: matching_packages.files | length > 0
 
-- name: Check if package file exists
-  stat:
-    path: "{{ package_source_path }}"
-  register: package_file_check
-
-- name: Detailed file existence check and error handling
-  block:
-    - name: List available files in source directory
-      shell: "ls -l {{ package_item.source_dir | default(packages_dir, true) }}"
-      register: directory_contents
-      when: not package_file_check.stat.exists
-      changed_when: false
-      failed_when: false
-
-    - name: Fail with detailed error if package file does not exist
+    - name: Fail if no matching package found
       fail:
         msg: |
-          ERROR: Package file not found!
-          - Expected file: {{ package_item.file }}
-          - Expected path: {{ package_source_path }}
-          - Available files in directory:
-          {{ directory_contents.stdout | default('No directory listing available') }}
-      when: not package_file_check.stat.exists
+          No matching RPM package found for {{ package_item.name }}
+          Search directory: {{ package_item.source_dir | default(packages_dir, true) }}
+          Available files:
+          {{ matching_packages.files | map(attribute='path') | list | to_nice_yaml }}
+      when: matching_packages.files | length == 0
+
+- name: Debug selected package
+  debug:
+    msg: "Selected package path: {{ package_source_path }}"
 
 - name: Check if package is already installed
   command: rpm -q {{ package_item.name }}
