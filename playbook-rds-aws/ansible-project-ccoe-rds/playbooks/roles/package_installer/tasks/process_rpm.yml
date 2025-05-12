@@ -45,13 +45,7 @@
   when: package_item.gpg_key is defined
 
 - name: Install RPM package
-  yum:
-    name: "{{ package_source_path }}"
-    state: present
-    disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
-    disablerepo: "*"  # ใช้ disablerepo แทน disable_repo
-  register: rpm_install
-  when: rpm_check.rc != 0
+  command: "rpm -Uvh --nodeps {{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) | ternary('--nogpgcheck', '') }} {{ package_source_path }}"
   
 - name: Debug package_source_path
   debug:
