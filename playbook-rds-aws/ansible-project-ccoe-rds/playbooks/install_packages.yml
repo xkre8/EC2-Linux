@@ -58,5 +58,11 @@
 - name: Install database packages
   hosts: all
   become: true
+  vars:
+    download_dir: /tmp/postgresql_rpms
+    repo_rpm_url: https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    client_packages:
+      - postgresql17
+      - postgresql17-libs
   roles:
     - postgresql_repo
