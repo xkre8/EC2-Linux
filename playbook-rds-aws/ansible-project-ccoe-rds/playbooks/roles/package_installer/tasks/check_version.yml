@@ -1,30 +1,11 @@
 ---
-- name: Check package version if command provided
-  shell: "{{ package_item.version_check_cmd }}"
-  register: version_check
+- name: Check installed version
+  command: "{{ package_item.version_check_cmd }}"
+  register: version_output
   changed_when: false
   failed_when: false
-  when: package_item.version_check_cmd is defined
+  ignore_errors: true
 
-- name: Display version information
+- name: Report version information
   debug:
-    msg: "{{ package_item.name }} version information: {{ version_check.stdout | default('Version check failed or not available') }}"
-  when: package_item.version_check_cmd is defined
-
-- name: Append version to package info when available
-  set_fact:
-    package_info: "{{ package_info | combine({'version_info': version_check.stdout | default('Version check failed or not available')}) }}"
-  when: package_item.version_check_cmd is defined
-
-- name: Display package information
-  debug:
-    var: package_info.stdout_lines
-    verbosity: 0  # Always show, even in non-verbose mode
-  when: show_detailed_output | bool
-
-- name: Append to installation report
-  template:
-    src: installation_report.j2
-    dest: "{{ output_file }}"
-    mode: '0644'
-  when: show_detailed_output | bool
+    msg: "Version check for {{ package_item.name }}: {{ version_output.stdout | default('Command failed') }}"

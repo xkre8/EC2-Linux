@@ -1,105 +1,45 @@
 ---
-- block:
-    - name: Download RPM package if URL is provided
-      get_url:
-        url: "{{ package_item.url }}"
-        dest: "{{ temp_download_dir }}/{{ package_item.file }}"
-        mode: '0644'
-      register: download_result
-      when: package_item.url is defined
-  rescue:
-    - name: Report download failure
-      fail:
-        msg: "Failed to download {{ package_item.file }} from {{ package_item.url }}"
+- name: Create temp directory if needed
+  file:
+    path: "{{ temp_download_dir }}"
+    state: directory
+    mode: '0755'
+  when: temp_download_dir is defined
 
-- name: Set source path for local package
-  set_fact:
-    package_source_path: "{{ package_item.source_dir | default(packages[0].source_dir) }}/{{ package_item.file }}"
-  when: package_item.url is not defined
-
-- name: Set source path for downloaded package
-  set_fact:
-    package_source_path: "{{ temp_download_dir }}/{{ package_item.file }}"
-  when: package_item.url is defined
-
-- name: Check if RPM file exists
+- name: Verify RPM files exist
   stat:
-    path: "{{ package_source_path }}"
+    path: "/tmp/aws-rds/libicu-76.1-4.fc42.i686.rpm"
   register: rpm_file_check
 
-- name: Fail if RPM file does not exist
-  fail:
-    msg: "RPM file {{ package_source_path }} does not exist!"
-  when: not rpm_file_check.stat.exists
-
-- name: Check if RPM is already installed
-  command: rpm -q {{ package_item.name }}
-  register: rpm_check
-  failed_when: false
-  changed_when: false
-
-- name: Import GPG key if provided
-  rpm_key:
-    key: "{{ package_item.gpg_key }}"
-    state: present
-  when: package_item.gpg_key is defined
-
-- name: Install RPM package
-  yum:
-    name: "{{ package_source_path }}"
-    state: present
-    disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
-  register: rpm_install
-  when: rpm_check.rc != 0
-
-- name: Debug current directory
-  command: pwd
-  register: current_dir
-  changed_when: false
-
-- name: Debug directory listing
-  command: ls -la {{ package_item.source_dir | default(packages[0].source_dir) }}
-  register: dir_listing
-  changed_when: false
-  
-- name: Debug package details before installation
+- name: Show file existence result
   debug:
-    msg: 
-      - "Package name: {{ package_item.name }}"
-      - "Package file: {{ package_item.file }}"
-      - "Source dir: {{ package_item.source_dir | default(packages[0].source_dir) }}"
-      - "Full path: {{ package_source_path }}"
+    msg: "File exists: {{ rpm_file_check.stat.exists }}"
 
-
-- name: Get installed package information
-  shell: |
-    echo "===== PACKAGE INFORMATION ====="
-    rpm -qi {{ package_item.name }} | grep -E 'Name|Version|Release|Description'
-    echo ""
-    echo "===== SERVICE STATUS ====="
-    if systemctl list-unit-files | grep -q {{ package_item.name }}; then
-      systemctl status {{ package_item.name }} 2>/dev/null || echo "Service exists but may not be running"
-    else
-      echo "No systemd service found for {{ package_item.name }}"
-      # Try to check for other services that might have been installed by this RPM
-      echo "Looking for related services..."
-      rpm -ql {{ package_item.name }} | grep -E '\.service$' | while read service_file; do
-        service_name=$(basename "$service_file")
-        echo "Found service file: $service_name"
-        systemctl status ${service_name} 2>/dev/null || echo "Service ${service_name} exists but may not be running"
-      done
-    fi
-    echo ""
-    echo "===== FILES INSTALLED ====="
-    rpm -ql {{ package_item.name }} | head -10
-    if [ $(rpm -ql {{ package_item.name }} | wc -l) -gt 10 ]; then
-      echo "... and $(( $(rpm -ql {{ package_item.name }} | wc -l) - 10 )) more files"
-    fi
-    echo ""
-  register: package_info
+- name: Run ls command to check directory contents
+  shell: "ls -la /tmp/aws-rds/"
+  register: ls_output
   changed_when: false
+
+- name: Show directory contents
+  debug:
+    msg: "{{ ls_output.stdout_lines }}"
+
+- name: Copy RPM file to ensure correct permissions
+  copy:
+    src: "/tmp/aws-rds/libicu-76.1-4.fc42.i686.rpm"
+    dest: "/tmp/libicu-76.1-4.fc42.i686.rpm"
+    remote_src: yes
+    mode: '0644'
+  ignore_errors: true
+
+- name: Process each package
+  include_tasks: process_package.yml
+  loop: "{{ packages }}"
+  loop_control:
+    loop_var: package_item
+
+- name: Generate final installation report
+  template:
+    src: report.j2
+    dest: "{{ output_file }}"
   when: show_detailed_output | bool
-
-
-- name: Include version check
-  include_tasks: check_version.yml

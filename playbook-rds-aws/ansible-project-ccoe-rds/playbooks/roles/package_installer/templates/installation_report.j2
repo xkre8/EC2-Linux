@@ -1,25 +1,19 @@
-# Package Installation Report for {{ package_item.name }} - {{ ansible_date_time.date }}
+Installation Report Generated on {{ ansible_date_time.date }} at {{ ansible_date_time.time }}
+======================================================================================
 
-## System Information
-Hostname: {{ ansible_hostname }}
-OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
-
-## Package
-Name: {{ package_item.name }}
-File: {{ package_item.file }}
-Type: {{ package_item.type | default('rpm') }}
-{% if package_item.type | default('rpm') == 'rpm' %}
-Installation Status: {{ "Newly installed" if rpm_install is defined and rpm_install.changed else "Already installed" }}
+{% for package in packages %}
+Package: {{ package.name }}
+-----------------------
+{% if hostvars[inventory_hostname]['pkg_' + package.name + '_installed'] is defined %}
+Installation Status: {{ hostvars[inventory_hostname]['pkg_' + package.name + '_installed'] }}
 {% else %}
-Installation Status: {{ "Newly extracted" if extract_result is defined and extract_result.changed else "Already exists" }}
+Installation Status: Unknown
 {% endif %}
 
-## Version Information
-{% if package_item.version_check_cmd is defined %}
-{{ package_info.version_info }}
+{% if hostvars[inventory_hostname]['pkg_' + package.name + '_version'] is defined %}
+Version Information: {{ hostvars[inventory_hostname]['pkg_' + package.name + '_version'] }}
 {% else %}
-Version check not configured for this package
+Version Information: Not available
 {% endif %}
 
-## Details
-{{ package_info.stdout if package_info is defined else "Information not available" }}
+{% endfor %}
