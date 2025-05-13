@@ -1,26 +1,39 @@
 ---
 packages:
-  - name: mysql-shell
-    file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    version_check_cmd: "mysql-shell --version"
+  # - name: mysql-shell
+  #   file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "sudo rpm -q mysql-shell"
   
-  - name: mariadb
-    file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    version_check_cmd: "odbcinst -q -d"  
+  # - name: mariadb
+  #   file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "sudo rpm -q mariadb-connector-odbc"  
   
-  - name: oracle-instantclient-basic
-    file: "oracle-instantclient-basic-23.8.0.25.04-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    version_check_cmd: "ls -la /usr/lib/oracle/23.7.0.25.01/client64/lib" 
+  # - name: oracle-instantclient-basic
+  #   file: "oracle-instantclient-basic-23.8.0.25.04-1.el9.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "sudo dnf list --installed oracle-instantclient-basic" 
 
+  - name: postgresql17-libs
+    file: "postgresql17-libs-17.5-1PGDG.rhel9.x86_64.rpm"
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+   
+
+  - name: postgresql17
+    file: "postgresql17-17.5-1PGDG.rhel9.x86_64.rpm"
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+   
   # - name: my-mongosh
   #   file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
   #   source_dir: "/tmp/aws-rds/"
