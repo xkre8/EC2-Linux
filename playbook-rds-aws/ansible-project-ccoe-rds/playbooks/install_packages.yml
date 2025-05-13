@@ -55,9 +55,8 @@
 #     - name: Using role to install
 #       ansible.builtin.import_role:
 #         name: package_installer
----
-- name: Install all packages in correct order
-  hosts: all
+- name: Install database packages
+  hosts: "{{ target_hosts | default('all') }}"
   become: true
   roles:
-    - role: repo_installer
+    - db_packages

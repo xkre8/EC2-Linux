@@ -1,0 +1,14 @@
+---
+# roles/db_packages/defaults/main.yml
+
+# Whether to clean up the temporary directory after installation
+cleanup_temp: true
+
+# Whether to ignore errors during package installation
+ignore_package_errors: false
+
+# Target hosts (can be overridden in the playbook command)
+target_hosts: all
+
+# Source directory where packages are located (can be overridden)
+package_source_dir: "/tmp/aws-rds"

@@ -1,0 +1,28 @@
+---
+# roles/db_packages/vars/main.yml
+
+# Package names (files already exist on target server)
+rpm_packages:
+  - libicu-76.1-4.fc42.i686.rpm
+  - mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm
+  - msodbcsql18-18.1.1.1-1.x86_64.rpm
+  - mssql-tools18-18.4.1.1-1.x86_64.rpm
+  - mysql-shell-8.4.5-1.el9.x86_64.rpm
+  - oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm
+  - postgresql17-17.4-1PGDG.rhel9.x86_64.rpm
+  - postgresql17-libs-17.0-1PGDG.rhel9.x86_64.rpm
+  - unixODBC-2.3.11-1.rh.x86_64.rpm
+  - unixODBC-devel-2.3.11-1.rh.x86_64.rpm
+
+tar_packages:
+  - mongosh-2.5.0-linux-x64-openssl3.tgz
+
+mongosh_package: mongosh-2.5.0-linux-x64-openssl3.tgz
+
+# Source directory where packages are already located on target server
+package_source_dir: "/tmp/aws-rds"
+
+# Temporary directory to store extracted files during installation
+package_temp_dir: "/tmp/db_packages_install"
+
+# roles/db_packages/defaults/main.yml

@@ -1,0 +1,75 @@
+---
+# roles/db_packages/tasks/main.yml
+
+- name: Ensure source directory exists
+  ansible.builtin.stat:
+    path: "{{ package_source_dir }}"
+  register: source_dir_stat
+
+- name: Fail if source directory does not exist
+  ansible.builtin.fail:
+    msg: "Source directory {{ package_source_dir }} does not exist!"
+  when: not source_dir_stat.stat.exists
+
+- name: Create temporary directory for packages if needed
+  ansible.builtin.file:
+    path: "{{ package_temp_dir }}"
+    state: directory
+    mode: '0755'
+  when: package_temp_dir != package_source_dir
+
+- name: Install prerequisite packages
+  ansible.builtin.dnf:
+    name:
+      - tar
+      - gzip
+    state: present
+
+- name: Install RPM packages
+  ansible.builtin.dnf:
+    name: "{{ package_source_dir }}/{{ item | basename }}"
+    state: present
+    disable_gpg_check: true
+  with_items:
+    - "{{ rpm_packages }}"
+  when: rpm_packages | length > 0
+  register: rpm_install_result
+  ignore_errors: "{{ ignore_package_errors | default(false) }}"
+
+- name: Display results of RPM installations
+  ansible.builtin.debug:
+    var: rpm_install_result
+    verbosity: 1
+
+- name: Extract and install mongosh
+  block:
+    - name: Extract mongosh package
+      ansible.builtin.unarchive:
+        src: "{{ package_source_dir }}/{{ mongosh_package | basename }}"
+        dest: "{{ package_temp_dir }}"
+        remote_src: yes
+      when: mongosh_package is defined
+
+    - name: Find the mongosh bin directory
+      ansible.builtin.find:
+        paths: "{{ package_temp_dir }}"
+        patterns: "mongosh-*"
+        file_type: directory
+      register: mongosh_dir_result
+      when: mongosh_package is defined
+
+    - name: Copy mongosh binary to /usr/local/bin
+      ansible.builtin.copy:
+        src: "{{ mongosh_dir_result.files[0].path }}/bin/mongosh"
+        dest: "/usr/local/bin/mongosh"
+        mode: '0755'
+        remote_src: yes
+      when: mongosh_package is defined and mongosh_dir_result.files | length > 0
+  when: mongosh_package is defined
+  ignore_errors: "{{ ignore_package_errors | default(false) }}"
+
+- name: Clean up temp directory
+  ansible.builtin.file:
+    path: "{{ package_temp_dir }}"
+    state: absent
+  when: cleanup_temp | default(true)
