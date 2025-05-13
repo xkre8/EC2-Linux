@@ -1,4 +1,11 @@
 ---
+- name: Ensure dnf-plugins-core is installed on controller
+  package:
+    name: dnf-plugins-core
+    state: present
+  delegate_to: localhost
+  run_once: true
+
 - name: Ensure download directory exists on controller
   file:
     path: "{{ download_dir }}"
