@@ -8,29 +8,29 @@
     - "{{ temp_download_dir }}"
   when: temp_download_dir is defined
 
-# Process RPM packages with dependency handling
-- name: Find packages with no dependencies first
-  set_fact:
-    independent_packages: "{{ packages | selectattr('requires', 'undefined') | list }}"
-    dependent_packages: "{{ packages | selectattr('requires', 'defined') | list }}"
+# First attempt to clean yum cache to prevent online repository checks
+- name: Clean yum cache to ensure offline operation
+  command: yum clean all
+  changed_when: false
+  ignore_errors: true
 
-- name: Install independent packages first (RPM only)
-  include_tasks: process_rpm.yml
-  loop: "{{ independent_packages | selectattr('type', 'equalto', 'rpm') | list }}"
+# First attempt to install using package module
+- name: Try installing packages with yum (offline mode) - first attempt
+  include_tasks: install_with_package.yml
+  loop: "{{ packages | selectattr('type', 'equalto', 'rpm') | list }}"
   loop_control:
     loop_var: package_item
-  when: independent_packages | length > 0
 
-- name: Install dependent packages in order (RPM only)
-  include_tasks: process_rpm.yml
-  loop: "{{ dependent_packages | selectattr('type', 'equalto', 'rpm') | list }}"
+# If package module fails, try rpm command as fallback
+- name: Try installing packages with rpm command (offline fallback)
+  include_tasks: install_with_rpm.yml
+  loop: "{{ packages | selectattr('type', 'equalto', 'rpm') | list }}"
   loop_control:
     loop_var: package_item
-  when: dependent_packages | length > 0
 
 # Process TGZ packages (these usually don't have dependencies)
 - name: Process TGZ packages
-  include_tasks: process_rpm.yml
+  include_tasks: process_tgz.yml
   loop: "{{ packages | selectattr('type', 'equalto', 'tgz') | list }}"
   loop_control:
     loop_var: package_item

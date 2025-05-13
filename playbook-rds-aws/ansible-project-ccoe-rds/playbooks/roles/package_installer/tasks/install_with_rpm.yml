@@ -1,0 +1,65 @@
+---
+# Fallback installation method using direct rpm command
+- name: Check if package is already installed
+  command: rpm -q {{ package_item.name }}
+  register: rpm_check
+  failed_when: false
+  changed_when: false
+  
+- name: Set source path for local package
+  set_fact:
+    package_source_path: "{{ package_item.source_dir | default(packages_default_source_dir) }}/{{ package_item.file }}"
+
+- name: Check if RPM file exists
+  stat:
+    path: "{{ package_source_path }}"
+  register: rpm_file_check
+
+- name: Skip if RPM is already installed or file does not exist
+  debug:
+    msg: >
+      {{ "Package " + package_item.name + " is already installed." if rpm_check.rc == 0 else
+         "RPM file " + package_source_path + " does not exist!" if not rpm_file_check.stat.exists else
+         "Will attempt to install " + package_item.name }}
+    
+# Only install if not already installed and RPM file exists and yum install failed
+- name: Debug RPM command (fallback)
+  debug:
+    msg: "Will run: rpm -ivh {{ '--nodeps' if package_item.ignore_deps | default(false) else '' }} {{ package_source_path }}"
+  when: 
+    - rpm_check.rc != 0  # Not already installed
+    - rpm_file_check.stat.exists  # File exists
+    
+# Use raw module to avoid issues with complex commands
+- name: Install RPM package with rpm command (fallback)
+  raw: cd {{ package_item.source_dir | default(packages_default_source_dir) }} && rpm -ivh {{ '--nodeps' if package_item.ignore_deps | default(false) else '' }} {{ package_item.file }}
+  register: rpm_install
+  when: 
+    - rpm_check.rc != 0  # Not already installed
+    - rpm_file_check.stat.exists  # File exists
+  failed_when: false  # Don't fail even if rpm command has issues
+  changed_when: "'already installed' not in rpm_install.stdout|default('') and 'already installed' not in rpm_install.stderr|default('') and rpm_install.rc|default(1) == 0"
+    
+- name: Display RPM install result (fallback)
+  debug:
+    msg: >
+      RPM install result for {{ package_item.name }}:
+      {{ rpm_install.stdout|default('') }}
+      {{ rpm_install.stderr|default('') }}
+  when: rpm_install is defined
+  
+- name: Check installation after rpm command
+  command: rpm -q {{ package_item.name }}
+  register: rpm_check_after_raw
+  failed_when: false
+  changed_when: false
+  when: 
+    - rpm_check.rc != 0  # Not already installed before
+    - rpm_file_check.stat.exists  # File exists
+    
+- name: Installation status after rpm command
+  debug:
+    msg: "{{ package_item.name }} installation status: {{ 'Installed' if rpm_check_after_raw.rc|default(1) == 0 else 'Failed' }}"
+  when: 
+    - rpm_check.rc != 0  # Not already installed before
+    - rpm_file_check.stat.exists  # File exists

@@ -1,0 +1,53 @@
+---
+# Install packages using yum/package module in offline mode
+- name: Check if package is already installed
+  command: rpm -q {{ package_item.name }}
+  register: rpm_check
+  failed_when: false
+  changed_when: false
+
+- name: Set source path for local package
+  set_fact:
+    package_source_path: "{{ package_item.source_dir | default(packages_default_source_dir) }}/{{ package_item.file }}"
+
+- name: Install package with yum in offline mode
+  yum:
+    name: "{{ package_source_path }}"
+    state: present
+    disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check) }}"
+    disable_repos: true  # Very important for offline mode - prevent repo metadata download
+    disablerepo: "*"     # Disable all repos
+  register: yum_install
+  when: rpm_check.rc != 0
+  failed_when: false  # Don't fail so we can try rpm command as fallback
+
+- name: Debug yum install result
+  debug:
+    msg: >
+      Yum install for {{ package_item.name }} result: 
+      {{ 'Success' if yum_install.failed is defined and not yum_install.failed else
+         'Failed or skipped: ' + (yum_install.msg|default('Unknown error')) }}
+  when: rpm_check.rc != 0
+
+- name: Check installation again
+  command: rpm -q {{ package_item.name }}
+  register: rpm_check_after
+  failed_when: false
+  changed_when: false
+  when: rpm_check.rc != 0  # Only check if it wasn't installed before
+
+- name: Run version check command
+  shell: "{{ package_item.version_check_cmd }}"
+  register: version_check
+  changed_when: false
+  failed_when: false
+  when: 
+    - package_item.version_check_cmd is defined
+    - rpm_check_after.rc is defined and rpm_check_after.rc == 0
+
+- name: Show version check result
+  debug:
+    msg: "Version check result for {{ package_item.name }}: {{ version_check.stdout|default('Command failed') }}"
+  when: 
+    - package_item.version_check_cmd is defined
+    - version_check.rc is defined
