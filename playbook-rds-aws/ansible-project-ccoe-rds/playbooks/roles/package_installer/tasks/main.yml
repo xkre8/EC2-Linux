@@ -1,0 +1,16 @@
+---
+- name: Create temporary download directory
+  file:
+    path: "{{ temp_download_dir }}"
+    state: directory
+    mode: '0755'
+  when: packages | selectattr('url', 'defined') | list | length > 0
+
+- name: Process each package
+  include_tasks: "process_{{ item.type | default('rpm') }}.yml"
+  loop: "{{ packages }}"
+  loop_control:
+    loop_var: package_item
+    label: "{{ package_item.name }} ({{ package_item.type | default('rpm') }})"
+
+
