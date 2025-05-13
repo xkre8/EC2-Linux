@@ -36,7 +36,13 @@ packages:
     disable_gpg_check: true
     version_check_cmd: "psql --version"
 
-   
+  - name: icu
+    file: "libicu-76.1-4.fc42.i686.rpm"  # Replace with actual filename
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q icu"
+
   # - name: my-mongosh
   #   file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
   #   source_dir: "/tmp/aws-rds/"
