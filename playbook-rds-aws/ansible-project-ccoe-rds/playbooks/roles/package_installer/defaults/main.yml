@@ -26,6 +26,7 @@ packages:
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
+    version_check_cmd: "psql --version"
    
 
   - name: postgresql17
@@ -33,6 +34,7 @@ packages:
     source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
+    version_check_cmd: "psql --version"
    
   # - name: my-mongosh
   #   file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
