@@ -1,8 +1,7 @@
 ---
-- name: Ensure dnf-plugins-core is installed on controller
-  package:
-    name: dnf-plugins-core
-    state: present
+- name: Ensure python3-dnf and dnf-plugins-core are installed on controller
+  raw: dnf install -y python3-dnf dnf-plugins-core
+  become: true
   delegate_to: localhost
   run_once: true
 
