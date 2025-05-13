@@ -1,7 +1,0 @@
----
-# Default variables for download_rpms role
-repo_rpm_url: https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-download_dir: /tmp/postgresql_rpms
-client_packages:
-  - postgresql17
-  - postgresql17-libs
