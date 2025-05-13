@@ -21,27 +21,27 @@ packages:
   #   disable_gpg_check: true
   #   version_check_cmd: "sudo dnf list --installed oracle-instantclient-basic" 
 
-  - name: libicu                 # ← ใช้ชื่อ libicu ให้ตรงกับ rpm -q
-    file: "libicu-69.1-9.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: rpm
-    disable_gpg_check: true
-    version_check_cmd: "rpm -q libicu"
-
   - name: postgresql17-libs
     file: "postgresql17-libs-17.5-1PGDG.rhel9.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
-    type: rpm
+    type: "rpm"
     disable_gpg_check: true
-    version_check_cmd: "rpm -q postgresql17-libs"   # ไม่ใช้ psql ตอนนี้
+    version_check_cmd: "rpm -q postgresql17-libs"
+   
 
   - name: postgresql17
     file: "postgresql17-17.5-1PGDG.rhel9.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
-    type: rpm
+    type: "rpm"
     disable_gpg_check: true
-    version_check_cmd: "/usr/pgsql-17/bin/psql --version"
+    version_check_cmd: "psql --version"
 
+  - name: icu
+    file: "libicu-76.1-4.fc42.i686.rpm"  # Replace with actual filename
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q icu"
 
   # - name: my-mongosh
   #   file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
