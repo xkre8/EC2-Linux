@@ -53,3 +53,14 @@
     - name: Using role to install
       ansible.builtin.import_role:
         name: package_installer
+
+
+    - name: Ensure /usr/pgsql-17/bin in system PATH
+      copy:
+        dest: /etc/profile.d/pgsql17.sh
+        content: 'export PATH=$PATH:/usr/pgsql-17/bin'
+        owner: root
+        group: root
+        mode: '0644'
+      become: true
+      tags: always
