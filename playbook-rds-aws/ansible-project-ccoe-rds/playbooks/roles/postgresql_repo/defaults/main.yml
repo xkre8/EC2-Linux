@@ -1,0 +1,5 @@
+---
+# my_namespace/postgresql/roles/postgresql_repo/defaults/main.yml
+postgresql_repo_rpm_url: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+postgresql_repo_rpm_dest: "/tmp/pgdg-redhat-repo-latest.noarch.rpm"
+postgresql_version: "17"

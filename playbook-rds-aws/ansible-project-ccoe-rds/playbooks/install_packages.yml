@@ -56,7 +56,7 @@
 #       ansible.builtin.import_role:
 #         name: package_installer
 - name: Install database packages
-  hosts: "{{ target_hosts | default('all') }}"
+  hosts: all
   become: true
   roles:
-    - db_packages
+    - postgresql_repo

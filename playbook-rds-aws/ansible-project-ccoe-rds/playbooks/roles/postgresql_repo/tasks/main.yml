@@ -1,0 +1,23 @@
+---
+# my_namespace/postgresql/roles/postgresql_repo/tasks/main.yml
+- name: Download PostgreSQL repository RPM to /tmp
+  get_url:
+    url: "{{ postgresql_repo_rpm_url }}"
+    dest: "{{ postgresql_repo_rpm_dest }}"
+    mode: '0644'
+  register: download_repo_rpm
+  until: download_repo_rpm is succeeded
+  retries: 3
+  delay: 5
+
+- name: Install PostgreSQL repository RPM
+  dnf:
+    name: "{{ postgresql_repo_rpm_dest }}"
+    state: present
+    disable_gpg_check: yes
+  become: yes
+
+- name: Disable default PostgreSQL module
+  command: dnf -qy module disable postgresql
+  become: yes
+  changed_when: false
