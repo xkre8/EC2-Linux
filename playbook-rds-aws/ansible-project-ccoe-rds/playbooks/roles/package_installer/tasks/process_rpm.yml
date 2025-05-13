@@ -1,148 +1,86 @@
 ---
 - block:
-    - name: Set source path for local package
-      set_fact:
-        package_source_path: "{{ package_item.source_dir | default(packages_default_source_dir) }}/{{ package_item.file }}"
-
-    - name: Check if RPM file exists
-      stat:
-        path: "{{ package_source_path }}"
-      register: rpm_file_check
-
-    - name: Fail if RPM file does not exist
+    - name: Download RPM package if URL is provided
+      get_url:
+        url: "{{ package_item.url }}"
+        dest: "{{ temp_download_dir }}/{{ package_item.file }}"
+        mode: '0644'
+      register: download_result
+      when: package_item.url is defined
+  rescue:
+    - name: Report download failure
       fail:
-        msg: "Package file {{ package_source_path }} does not exist!"
-      when: not rpm_file_check.stat.exists
+        msg: "Failed to download {{ package_item.file }} from {{ package_item.url }}"
 
-    - name: Check if RPM is already installed
-      shell: >
-        {% if package_item.type == "rpm" %}
-        rpm -q {{ package_item.name }}
-        {% elif package_item.type == "tgz" and package_item.name == "mongosh" %}
-        test -d /opt/mongosh-2.5.0-linux-x64 && echo "installed" || echo "not installed"
-        {% else %}
-        echo "unknown package type"
-        {% endif %}
-      register: pkg_check
-      failed_when: false
-      changed_when: false
-      
-    - name: Debug package status
-      debug:
-        msg: "Package {{ package_item.name }} status: {{ 'installed' if pkg_check.rc == 0 or 'installed' in pkg_check.stdout else 'not installed' }}"
-      
-    # Handle RPM packages
-    - name: Install RPM package (offline mode)
-      command: >
-        rpm -ivh {{ '--nodeps' if package_item.ignore_deps | default(true) else '' }}
-        {{ '--force' if package_item.force | default(true) else '' }}
-        {{ '--noscripts' if package_item.noscripts | default(false) else '' }}
-        {{ package_source_path }}
-      register: rpm_install
-      when: 
-        - pkg_check.rc != 0 or 'not installed' in pkg_check.stdout
-        - package_item.type == "rpm"
-      failed_when: 
-        - rpm_install.rc != 0 
-        - "'already installed' not in rpm_install.stderr|default('')"
-      changed_when: rpm_install.rc == 0
+- name: Set source path for local package
+  set_fact:
+    package_source_path: "{{ package_item.source_dir | default(packages[0].source_dir) }}/{{ package_item.file }}"
+  when: package_item.url is not defined
 
-    # Handle TGZ packages
-    - name: Create directory for TGZ extraction
-      file:
-        path: "{{ package_item.extract_path | default('/opt') }}"
-        state: directory
-        mode: '0755'
-      when: 
-        - package_item.type == "tgz"
-        - pkg_check.rc != 0 or 'not installed' in pkg_check.stdout
+- name: Set source path for downloaded package
+  set_fact:
+    package_source_path: "{{ temp_download_dir }}/{{ package_item.file }}"
+  when: package_item.url is defined
 
-    - name: Extract TGZ package
-      unarchive:
-        src: "{{ package_source_path }}"
-        dest: "{{ package_item.extract_path | default('/opt') }}"
-        remote_src: yes
-      when: 
-        - package_item.type == "tgz"
-        - pkg_check.rc != 0 or 'not installed' in pkg_check.stdout
+- name: Check if RPM file exists
+  stat:
+    path: "{{ package_source_path }}"
+  register: rpm_file_check
 
-    # Run version check command if defined
-    - name: Run version check command if defined
-      shell: "{{ package_item.version_check_cmd }}"
-      register: version_check
-      changed_when: false
-      failed_when: false
-      when: package_item.version_check_cmd is defined
+- name: Fail if RPM file does not exist
+  fail:
+    msg: "RPM file {{ package_source_path }} does not exist!"
+  when: not rpm_file_check.stat.exists
 
-    - name: Show version check result
-      debug:
-        msg: "Version check result: {{ version_check.stdout|default('Command failed or not available') }}"
-      when: package_item.version_check_cmd is defined
+- name: Check if RPM is already installed
+  command: rpm -q {{ package_item.name }}
+  register: rpm_check
+  failed_when: false
+  changed_when: false
 
-    # Record installation result to file
-    - name: Record installation result to file
-      lineinfile:
-        path: "{{ output_file }}"
-        line: "{{ ansible_date_time.iso8601 }} - {{ package_item.name }} ({{ package_item.file }}): {{ 'Successfully installed' if (pkg_check.rc == 0 or 'installed' in pkg_check.stdout or rpm_install is defined and rpm_install.rc == 0) else 'Installation failed' }}"
-        create: yes
-      when: show_detailed_output | bool
+- name: Import GPG key if provided
+  rpm_key:
+    key: "{{ package_item.gpg_key }}"
+    state: present
+  when: package_item.gpg_key is defined
 
-    # For RPM packages, get detailed info
-    - name: Get basic package info for RPM
-      command: rpm -qi {{ package_item.name }}
-      register: rpm_basic_info
-      changed_when: false
-      failed_when: false
-      when: 
-        - package_item.type == "rpm"
-        - pkg_check.rc == 0
-        - show_detailed_output | bool
+- name: Install RPM package
+  yum:
+    name: "{{ package_source_path }}"
+    state: present
+    disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
+  register: rpm_install
+  when: rpm_check.rc != 0
 
-    - name: Check for services related to package
-      shell: rpm -ql {{ package_item.name }} | grep -E '\.service$' || true
-      register: service_files
-      changed_when: false
-      failed_when: false
-      when: 
-        - package_item.type == "rpm"
-        - pkg_check.rc == 0
-        - show_detailed_output | bool
+- name: Get installed package information
+  shell: |
+    echo "===== PACKAGE INFORMATION ====="
+    rpm -qi {{ package_item.name }} | grep -E 'Name|Version|Release|Description'
+    echo ""
+    echo "===== SERVICE STATUS ====="
+    if systemctl list-unit-files | grep -q {{ package_item.name }}; then
+      systemctl status {{ package_item.name }} 2>/dev/null || echo "Service exists but may not be running"
+    else
+      echo "No systemd service found for {{ package_item.name }}"
+      # Try to check for other services that might have been installed by this RPM
+      echo "Looking for related services..."
+      rpm -ql {{ package_item.name }} | grep -E '\.service$' | while read service_file; do
+        service_name=$(basename "$service_file")
+        echo "Found service file: $service_name"
+        systemctl status ${service_name} 2>/dev/null || echo "Service ${service_name} exists but may not be running"
+      done
+    fi
+    echo ""
+    echo "===== FILES INSTALLED ====="
+    rpm -ql {{ package_item.name }} | head -10
+    if [ $(rpm -ql {{ package_item.name }} | wc -l) -gt 10 ]; then
+      echo "... and $(( $(rpm -ql {{ package_item.name }} | wc -l) - 10 )) more files"
+    fi
+    echo ""
+  register: package_info
+  changed_when: false
+  when: show_detailed_output | bool
 
-    - name: Display service information
-      debug:
-        msg: "Service files found for {{ package_item.name }}: {{ service_files.stdout_lines|default([]) }}"
-      when: 
-        - package_item.type == "rpm"
-        - pkg_check.rc == 0
-        - show_detailed_output | bool
-        - service_files.stdout_lines|default([]) | length > 0
 
-    # Create ODBC driver configuration for database drivers
-    - name: Configure ODBC driver for MariaDB
-      blockinfile:
-        path: /etc/odbcinst.ini
-        block: |
-          [MariaDB]
-          Description=MariaDB ODBC Driver
-          Driver=/usr/lib64/libmaodbc.so
-          Setup=/usr/lib64/libmaodbc.so
-          UsageCount=1
-        marker: "# {mark} ANSIBLE MANAGED BLOCK FOR MARIADB"
-        create: yes
-      when: 
-        - package_item.name == 'mariadb-connector-odbc'
-        - pkg_check.rc == 0 or rpm_install is defined and rpm_install.rc == 0
-
-    - name: Configure ODBC driver for MSSQL
-      blockinfile:
-        path: /etc/odbcinst.ini
-        block: |
-          [MSSQL18]
-          Description=Microsoft ODBC Driver 18 for SQL Server
-          Driver=/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.1.so.1.1
-          UsageCount=1
-        marker: "# {mark} ANSIBLE MANAGED BLOCK FOR MSSQL"
-        create: yes
-      when: 
-        - package_item.name == 'msodbcsql18'
-        - pkg_check.rc == 0 or rpm_install is defined and rpm_install.rc == 0
+- name: Include version check
+  include_tasks: check_version.yml

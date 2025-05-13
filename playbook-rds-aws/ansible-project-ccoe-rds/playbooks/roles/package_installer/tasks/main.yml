@@ -1,44 +1,16 @@
 ---
-# Main task for package installation
-
-- name: Display installation start message
-  debug:
-    msg: "Starting offline package installation process"
-
-- name: Check if source directory exists
-  stat:
-    path: "{{ packages_default_source_dir }}"
-  register: source_dir_check
-
-- name: Fail if source directory does not exist
-  fail:
-    msg: "Source directory {{ packages_default_source_dir }} does not exist. Please create it and place the required packages there."
-  when: not source_dir_check.stat.exists
-
-- name: Create installation report file if it doesn't exist
+- name: Create temporary download directory
   file:
-    path: "{{ output_file }}"
-    state: touch
-    mode: '0644'
-  when: show_detailed_output | bool
+    path: "{{ temp_download_dir }}"
+    state: directory
+    mode: '0755'
+  when: packages | selectattr('url', 'defined') | list | length > 0
 
-- name: Install packages with dependency resolution order
-  include_tasks: process_rpm.yml
-  loop: "{{ packages | sort(attribute='name') }}"
+- name: Process each package
+  include_tasks: "process_{{ item.type | default('rpm') }}.yml"
+  loop: "{{ packages }}"
   loop_control:
     loop_var: package_item
-  vars:
-    package_details: "{{ packages | selectattr('name', 'equalto', package_item.name) | list | first }}"
+    label: "{{ package_item.name }} ({{ package_item.type | default('rpm') }})"
 
-- name: Show installation summary
-  debug:
-    msg: "Installation process completed. Check {{ output_file }} for detailed report."
-  when: show_detailed_output | bool
 
-- name: Add PATH for mongosh if installed
-  lineinfile:
-    path: /etc/profile.d/mongosh.sh
-    line: 'export PATH=$PATH:/opt/mongosh-2.5.0-linux-x64/bin'
-    create: yes
-    mode: '0644'
-  when: "'mongosh' in packages|map(attribute='name')|list"
