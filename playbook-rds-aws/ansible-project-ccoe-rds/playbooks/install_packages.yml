@@ -53,15 +53,3 @@
     - name: Using role to install
       ansible.builtin.import_role:
         name: package_installer
-
-
-    - name: Copy RPMs to target
-      copy:
-        src: "/tmp/aws-rds/{{ item }}"
-        dest: "/tmp/aws-rds/{{ item }}"
-        mode: '0644'
-      loop:
-        - libicu-69.1-9.el9.x86_64.rpm
-        - postgresql17-libs-17.5-1PGDG.rhel9.x86_64.rpm
-        - postgresql17-17.5-1PGDG.rhel9.x86_64.rpm
-      delegate_to: localhost
