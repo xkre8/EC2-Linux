@@ -34,12 +34,19 @@
   when: output_file is defined
   become: true
 
-- name: Install PostgreSQL client
+- name: Install PostgreSQL repository RPM
   dnf:
-    name: "postgresql{{ postgresql_version }}"
+    name: "{{ download_folder | default('/tmp/downloads') }}/{{ pg_repo.repo_rpm | basename }}"
     state: present
+    disable_gpg_check: true
   become: true
-  register: pg_client_install
+  register: pg_repo_installation
+
+- name: Update DNF cache after repository installation
+  shell: "dnf clean all && dnf makecache"
+  become: true
+  changed_when: true
+  when: pg_repo_installation.changed
 
 - name: "Write PostgreSQL client installation status to report"
   lineinfile:
