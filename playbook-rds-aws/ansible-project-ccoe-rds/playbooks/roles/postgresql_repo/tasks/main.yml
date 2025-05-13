@@ -1,23 +1,37 @@
 ---
-# my_namespace/postgresql/roles/postgresql_repo/tasks/main.yml
-- name: Download PostgreSQL repository RPM to /tmp
-  get_url:
-    url: "{{ postgresql_repo_rpm_url }}"
-    dest: "{{ postgresql_repo_rpm_dest }}"
-    mode: '0644'
-  register: download_repo_rpm
-  until: download_repo_rpm is succeeded
-  retries: 3
-  delay: 5
+- name: Create directory to store RPMs
+  file:
+    path: "{{ download_dir }}"
+    state: directory
+    mode: '0755'
 
-- name: Install PostgreSQL repository RPM
-  dnf:
-    name: "{{ postgresql_repo_rpm_dest }}"
+- name: Download pgdg-redhat-repo-latest RPM
+  get_url:
+    url: "{{ pgdg_repo_url }}"
+    dest: "{{ download_dir }}/pgdg-redhat-repo-latest.noarch.rpm"
+    mode: '0644'
+
+- name: Install pgdg-redhat-repo-latest RPM
+  yum:
+    name: "{{ download_dir }}/pgdg-redhat-repo-latest.noarch.rpm"
     state: present
-    disable_gpg_check: yes
-  become: yes
+    disable_gpg_check: true
 
 - name: Disable default PostgreSQL module
   command: dnf -qy module disable postgresql
-  become: yes
-  changed_when: false
+  args:
+    warn: false
+
+- name: Download PostgreSQL 17 Server RPMs
+  command: >
+    dnf download
+    --resolve
+    --alldeps
+    --downloaddir={{ download_dir }}
+    postgresql17-server
+  register: dnf_download
+  changed_when: "'Complete!' in dnf_download.stdout"
+
+- name: Debug downloaded files
+  debug:
+    var: dnf_download.stdout_lines
