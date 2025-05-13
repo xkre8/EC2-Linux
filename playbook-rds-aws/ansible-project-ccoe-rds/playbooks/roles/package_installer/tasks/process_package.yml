@@ -1,3 +1,0 @@
----
-- name: Determine package type and process accordingly
-  include_tasks: "process_{{ package_item.type | default('rpm') }}.yml"

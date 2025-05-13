@@ -22,7 +22,7 @@ packages:
   #   version_check_cmd: "sudo dnf list --installed oracle-instantclient-basic" 
 
   - name: icu
-    file: "libicu-76.1-4.fc42.i686.rpm"
+    file: "icu-67.1-9.el9.src.rpm"
     source_dir: "/tmp/aws-rds"
     type: "rpm"
     disable_gpg_check: true
