@@ -11,31 +11,44 @@
 
     - name: Fail if RPM file does not exist
       fail:
-        msg: "RPM file {{ package_source_path }} does not exist!"
+        msg: "Package file {{ package_source_path }} does not exist!"
       when: not rpm_file_check.stat.exists
 
     - name: Check if RPM is already installed
-      command: rpm -q {{ package_item.name }}
-      register: rpm_check
+      shell: >
+        {% if package_item.type == "rpm" %}
+        rpm -q {{ package_item.name }}
+        {% elif package_item.type == "tgz" and package_item.name == "mongosh" %}
+        test -d /opt/mongosh-2.5.0-linux-x64 && echo "installed" || echo "not installed"
+        {% else %}
+        echo "unknown package type"
+        {% endif %}
+      register: pkg_check
       failed_when: false
       changed_when: false
       
     - name: Debug package status
       debug:
-        msg: "Package {{ package_item.name }} status: {{ 'installed' if rpm_check.rc == 0 else 'not installed' }}"
+        msg: "Package {{ package_item.name }} status: {{ 'installed' if pkg_check.rc == 0 or 'installed' in pkg_check.stdout else 'not installed' }}"
       
+    # Handle RPM packages
     - name: Install RPM package (offline mode)
       command: >
-        rpm -ivh {{ '--nodeps' if package_item.ignore_deps | default(false) else '' }} {{ package_source_path }}
+        rpm -ivh {{ '--nodeps' if package_item.ignore_deps | default(false) else '' }}
+        {{ '--force' if package_item.force | default(false) else '' }}
+        {{ '--noscripts' if package_item.noscripts | default(false) else '' }}
+        {{ '--nodeps' if package_item.ignore_deps | default(false) else '' }}
+        {{ package_source_path }}
       register: rpm_install
       when: 
-        - rpm_check.rc != 0
+        - pkg_check.rc != 0 or 'not installed' in pkg_check.stdout
         - package_item.type == "rpm"
       failed_when: 
         - rpm_install.rc != 0 
         - "'already installed' not in rpm_install.stderr|default('')"
       changed_when: rpm_install.rc == 0
 
+    # Handle TGZ packages
     - name: Create directory for TGZ extraction
       file:
         path: "{{ package_item.extract_path | default('/opt') }}"
@@ -43,7 +56,7 @@
         mode: '0755'
       when: 
         - package_item.type == "tgz"
-        - rpm_check.rc != 0
+        - pkg_check.rc != 0 or 'not installed' in pkg_check.stdout
 
     - name: Extract TGZ package
       unarchive:
@@ -52,8 +65,9 @@
         remote_src: yes
       when: 
         - package_item.type == "tgz"
-        - rpm_check.rc != 0
+        - pkg_check.rc != 0 or 'not installed' in pkg_check.stdout
 
+    # Run version check command if defined
     - name: Run version check command if defined
       shell: "{{ package_item.version_check_cmd }}"
       register: version_check
@@ -63,8 +77,16 @@
 
     - name: Show version check result
       debug:
-        msg: "Version check result: {{ version_check.stdout|default('Command failed') }}"
+        msg: "Version check result: {{ version_check.stdout|default('Command failed or not available') }}"
       when: package_item.version_check_cmd is defined
+
+    # Record installation result to file
+    - name: Record installation result to file
+      lineinfile:
+        path: "{{ output_file }}"
+        line: "{{ ansible_date_time.iso8601 }} - {{ package_item.name }} ({{ package_item.file }}): {{ 'Successfully installed' if (pkg_check.rc == 0 or 'installed' in pkg_check.stdout or rpm_install is defined and rpm_install.rc == 0) else 'Installation failed' }}"
+        create: yes
+      when: show_detailed_output | bool
 
     # For RPM packages, get detailed info
     - name: Get basic package info for RPM
@@ -74,7 +96,7 @@
       failed_when: false
       when: 
         - package_item.type == "rpm"
-        - rpm_check.rc == 0
+        - pkg_check.rc == 0
         - show_detailed_output | bool
 
     - name: Check for services related to package
@@ -84,7 +106,7 @@
       failed_when: false
       when: 
         - package_item.type == "rpm"
-        - rpm_check.rc == 0
+        - pkg_check.rc == 0
         - show_detailed_output | bool
 
     - name: Display service information
@@ -92,6 +114,36 @@
         msg: "Service files found for {{ package_item.name }}: {{ service_files.stdout_lines|default([]) }}"
       when: 
         - package_item.type == "rpm"
-        - rpm_check.rc == 0
+        - pkg_check.rc == 0
         - show_detailed_output | bool
         - service_files.stdout_lines|default([]) | length > 0
+
+    # Create ODBC driver configuration for database drivers
+    - name: Configure ODBC driver for MariaDB
+      blockinfile:
+        path: /etc/odbcinst.ini
+        block: |
+          [MariaDB]
+          Description=MariaDB ODBC Driver
+          Driver=/usr/lib64/libmaodbc.so
+          Setup=/usr/lib64/libmaodbc.so
+          UsageCount=1
+        marker: "# {mark} ANSIBLE MANAGED BLOCK FOR MARIADB"
+        create: yes
+      when: 
+        - package_item.name == 'mariadb-connector-odbc'
+        - pkg_check.rc == 0 or rpm_install is defined and rpm_install.rc == 0
+
+    - name: Configure ODBC driver for MSSQL
+      blockinfile:
+        path: /etc/odbcinst.ini
+        block: |
+          [MSSQL18]
+          Description=Microsoft ODBC Driver 18 for SQL Server
+          Driver=/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.1.so.1.1
+          UsageCount=1
+        marker: "# {mark} ANSIBLE MANAGED BLOCK FOR MSSQL"
+        create: yes
+      when: 
+        - package_item.name == 'msodbcsql18'
+        - pkg_check.rc == 0 or rpm_install is defined and rpm_install.rc == 0

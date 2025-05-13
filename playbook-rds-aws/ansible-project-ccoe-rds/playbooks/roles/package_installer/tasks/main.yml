@@ -1,44 +1,44 @@
 ---
-- name: Create required directories
-  file:
-    path: "{{ item }}"
-    state: directory
-    mode: '0755'
-  loop:
-    - "{{ temp_download_dir }}"
-  when: temp_download_dir is defined
+# Main task for package installation
 
-# First attempt to clean yum cache to prevent online repository checks
-- name: Clean yum cache to ensure offline operation
-  command: yum clean all
-  changed_when: false
-  ignore_errors: true
-
-# First attempt to install using package module
-- name: Try installing packages with yum (offline mode) - first attempt
-  include_tasks: install_with_package.yml
-  loop: "{{ packages | selectattr('type', 'equalto', 'rpm') | list }}"
-  loop_control:
-    loop_var: package_item
-
-# If package module fails, try rpm command as fallback
-- name: Try installing packages with rpm command (offline fallback)
-  include_tasks: install_with_rpm.yml
-  loop: "{{ packages | selectattr('type', 'equalto', 'rpm') | list }}"
-  loop_control:
-    loop_var: package_item
-
-# Process TGZ packages (these usually don't have dependencies)
-- name: Process TGZ packages
-  include_tasks: process_tgz.yml
-  loop: "{{ packages | selectattr('type', 'equalto', 'tgz') | list }}"
-  loop_control:
-    loop_var: package_item
-
-- name: Generate summary message
-  set_fact:
-    installation_summary: "Installation completed for {{ packages | length }} packages"
-
-- name: Display installation summary
+- name: Display installation start message
   debug:
-    msg: "{{ installation_summary }}"
+    msg: "Starting offline package installation process"
+
+- name: Check if source directory exists
+  stat:
+    path: "{{ packages_default_source_dir }}"
+  register: source_dir_check
+
+- name: Fail if source directory does not exist
+  fail:
+    msg: "Source directory {{ packages_default_source_dir }} does not exist. Please create it and place the required packages there."
+  when: not source_dir_check.stat.exists
+
+- name: Create installation report file if it doesn't exist
+  file:
+    path: "{{ output_file }}"
+    state: touch
+    mode: '0644'
+  when: show_detailed_output | bool
+
+- name: Install packages with dependency resolution order
+  include_tasks: process_rpm.yml
+  loop: "{{ packages | sort(attribute='name') }}"
+  loop_control:
+    loop_var: package_item
+  vars:
+    package_details: "{{ packages | selectattr('name', 'equalto', package_item.name) | list | first }}"
+
+- name: Show installation summary
+  debug:
+    msg: "Installation process completed. Check {{ output_file }} for detailed report."
+  when: show_detailed_output | bool
+
+- name: Add PATH for mongosh if installed
+  lineinfile:
+    path: /etc/profile.d/mongosh.sh
+    line: 'export PATH=$PATH:/opt/mongosh-2.5.0-linux-x64/bin'
+    create: yes
+    mode: '0644'
+  when: "'mongosh' in packages|map(attribute='name')|list"

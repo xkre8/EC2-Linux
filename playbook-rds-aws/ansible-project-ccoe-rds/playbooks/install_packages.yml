@@ -1,63 +1,113 @@
-# ---
-# # name: Install Server Packages and Repositories
-# - name: Install Server Packages and Repositories
-#   hosts: all
-#   #connection: local
-#   become: yes  
-#   # vars:
-#   #   nexus_files:
-#   #     - "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-#   #     - "mongosh-2.5.0-linux-x64-openssl3.tgz"
-#   #     - "mssql-tools-17.10.1.1-1.x86_64.rpm"
-#   #     - "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
-#   #     - "pgdg-redhat-repo-latest.noarch.rpm"
-#   #     - "mysql-shell-8.4.5-1.el9.x86_64.rpm"
+# # ---
+# # # name: Install Server Packages and Repositories
+# # - name: Install Server Packages and Repositories
+# #   hosts: all
+# #   #connection: local
+# #   become: yes  
+# #   # vars:
+# #   #   nexus_files:
+# #   #     - "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+# #   #     - "mongosh-2.5.0-linux-x64-openssl3.tgz"
+# #   #     - "mssql-tools-17.10.1.1-1.x86_64.rpm"
+# #   #     - "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
+# #   #     - "pgdg-redhat-repo-latest.noarch.rpm"
+# #   #     - "mysql-shell-8.4.5-1.el9.x86_64.rpm"
     
-#   #   show_detailed_output: true
-#   #   output_file: "/tmp/aws-rds/package_installation_report.txt"
-#   #   download_path: "/tmp/aws-rds/"
+# #   #   show_detailed_output: true
+# #   #   output_file: "/tmp/aws-rds/package_installation_report.txt"
+# #   #   download_path: "/tmp/aws-rds/"
   
-#   tasks:
-#   #   # First create the download directory to ensure it exists
-#   #   - name: Create destination directory
-#   #     ansible.builtin.file:
-#   #       path: "{{ download_path }}"
-#   #       state: directory
-#   #       mode: '0755'
-#   #     become: yes
+# #   tasks:
+# #   #   # First create the download directory to ensure it exists
+# #   #   - name: Create destination directory
+# #   #     ansible.builtin.file:
+# #   #       path: "{{ download_path }}"
+# #   #       state: directory
+# #   #       mode: '0755'
+# #   #     become: yes
 
-#   #   # Then include the role with fixed variable definitions
-#   #   - name: "Nexus : Import role ks.utils.nexus_tasks"
-#   #     ansible.builtin.include_role:
-#   #       name: ks.utils.nexus_tasks
-#   #     vars:
-#   #       filename: "{{ item }}"
-#   #       nexus_repo_group: "/bay/aws-dbclient"
-#   #       nexus_repo: "bay-automation-pub"
-#   #       nexus_downloaded_path: "{{ download_path }}"
-#   #       action_tasks: ["download_1file"]
-#   #     loop: "{{ nexus_files }}"
+# #   #   # Then include the role with fixed variable definitions
+# #   #   - name: "Nexus : Import role ks.utils.nexus_tasks"
+# #   #     ansible.builtin.include_role:
+# #   #       name: ks.utils.nexus_tasks
+# #   #     vars:
+# #   #       filename: "{{ item }}"
+# #   #       nexus_repo_group: "/bay/aws-dbclient"
+# #   #       nexus_repo: "bay-automation-pub"
+# #   #       nexus_downloaded_path: "{{ download_path }}"
+# #   #       action_tasks: ["download_1file"]
+# #   #     loop: "{{ nexus_files }}"
     
-#   #   - name: List files in the download directory
-#   #     ansible.builtin.find:
-#   #       paths: "{{ download_path }}"
-#   #     register: downloaded_files
+# #   #   - name: List files in the download directory
+# #   #     ansible.builtin.find:
+# #   #       paths: "{{ download_path }}"
+# #   #     register: downloaded_files
     
-#   #   - name: Display downloaded files
-#   #     ansible.builtin.debug:
-#   #       msg: "Files in {{ download_path }}: {{ downloaded_files.files | map(attribute='path') | map('basename') | list }}"
+# #   #   - name: Display downloaded files
+# #   #     ansible.builtin.debug:
+# #   #       msg: "Files in {{ download_path }}: {{ downloaded_files.files | map(attribute='path') | map('basename') | list }}"
     
-#   #   - name: Write downloaded files to report
-#   #     ansible.builtin.copy:
-#   #       content: "Downloaded files in {{ download_path }}:\n{% for file in downloaded_files.files %}{{ file.path }}\n{% endfor %}"
-#   #       dest: "/tmp/downloaded_files_report.txt"
+# #   #   - name: Write downloaded files to report
+# #   #     ansible.builtin.copy:
+# #   #       content: "Downloaded files in {{ download_path }}:\n{% for file in downloaded_files.files %}{{ file.path }}\n{% endfor %}"
+# #   #       dest: "/tmp/downloaded_files_report.txt"
 
-#     - name: Using role to install
-#       ansible.builtin.import_role:
-#         name: package_installer
+# #     - name: Using role to install
+# #       ansible.builtin.import_role:
+# #         name: package_installer
+# ---
+# - name: Install all packages in correct order
+#   hosts: all
+#   become: true
+#   roles:
+#     - role: package_installer
+
 ---
-- name: Install all packages in correct order
+# Main playbook for package installation
+- name: Install AWS RDS Client Packages Offline
   hosts: all
-  become: true
+  become: yes
+  vars:
+    packages_default_source_dir: "/tmp/aws-rds"  # Directory where your RPM and TGZ files are stored
+  
+  pre_tasks:
+    - name: Create package source directory if it doesn't exist
+      file:
+        path: "{{ packages_default_source_dir }}"
+        state: directory
+        mode: '0755'
+    
+    - name: Check for package files
+      find:
+        paths: "{{ packages_default_source_dir }}"
+        patterns: "*.rpm,*.tgz"
+      register: package_files
+      delegate_to: localhost
+    
+    - name: Display found package files
+      debug:
+        msg: "Found {{ package_files.files | length }} package files in {{ packages_default_source_dir }}"
+  
   roles:
     - role: package_installer
+
+  post_tasks:
+    - name: Display installation completion message
+      debug:
+        msg: "Package installation completed successfully"
+    
+    - name: Verify installed packages
+      shell: "{{ item.cmd }}"
+      loop:
+        - { cmd: "mysql-shell --version || echo 'MySQL Shell not installed'" }
+        - { cmd: "odbcinst -j || echo 'ODBC not installed'" }
+        - { cmd: "sqlcmd -? || echo 'MSSQL Tools not installed'" }
+        - { cmd: "psql --version || echo 'PostgreSQL not installed'" }
+        - { cmd: "/opt/mongosh-2.5.0-linux-x64/bin/mongosh --version || echo 'MongoDB Shell not installed'" }
+      register: verification_results
+      failed_when: false
+      changed_when: false
+    
+    - name: Display verification results
+      debug:
+        var: verification_results.results
