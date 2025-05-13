@@ -23,7 +23,7 @@ packages:
 
   - name: icu
     file: "libicu-76.1-4.fc42.i686.rpm"
-    source_dir: "/tmp/aws-rds"  # Remove trailing slash to avoid double slash
+    source_dir: "/tmp"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "rpm -q icu"

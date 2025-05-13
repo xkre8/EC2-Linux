@@ -52,6 +52,16 @@
   register: rpm_install
   when: rpm_check.rc != 0
 
+- name: Debug current directory
+  command: pwd
+  register: current_dir
+  changed_when: false
+
+- name: Debug directory listing
+  command: ls -la {{ package_item.source_dir | default(packages[0].source_dir) }}
+  register: dir_listing
+  changed_when: false
+  
 - name: Debug package details before installation
   debug:
     msg: 
