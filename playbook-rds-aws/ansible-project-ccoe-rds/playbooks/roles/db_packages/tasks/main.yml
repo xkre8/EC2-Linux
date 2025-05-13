@@ -17,67 +17,46 @@
     state: directory
     mode: '0755'
   when: package_temp_dir != package_source_dir
-
-- name: Check package dependencies
-  ansible.builtin.shell: "rpm -qpR {{ package_source_dir }}/{{ item | basename }}"
-  register: dependencies
-  with_items:
-    - "{{ rpm_packages }}"
-  changed_when: false
-  ignore_errors: true
-  check_mode: no
-  when: check_dependencies | default(true)
-
-- name: Display package dependencies
+  
+- name: Verify that the required packages exist
+  ansible.builtin.stat:
+    path: "{{ package_source_dir }}/{{ item }}"
+  register: package_stats
+  with_items: "{{ rpm_packages + tar_packages }}"
+  
+- name: Display missing packages
   ansible.builtin.debug:
-    var: dependencies
-    verbosity: 1
-  when: check_dependencies | default(true)
+    msg: "Package {{ item.item }} is missing from {{ package_source_dir }}"
+  when: not item.stat.exists
+  with_items: "{{ package_stats.results }}"
+  
+- name: Fail if any packages are missing
+  ansible.builtin.fail:
+    msg: "Some required packages are missing from {{ package_source_dir }}"
+  when: package_stats.results | selectattr('stat.exists', 'equalto', false) | list | length > 0
 
 - name: Install prerequisite packages
-  ansible.builtin.dnf:
-    name:
-      - tar
-      - gzip
-    state: present
-
-- name: Install RPM packages (standard method - attempt first)
-  ansible.builtin.dnf:
-    name: "{{ package_source_dir }}/{{ item | basename }}"
-    state: present
-    disable_gpg_check: true
-    disable_repo: "*"
-    disablerepo: "*"
-    localinstall: true
-  with_items:
-    - "{{ rpm_packages }}"
-  when: rpm_packages | length > 0 and not use_force_install_only | default(false)
-  register: rpm_install_result
+  ansible.builtin.command: "yum install -y tar gzip --disablerepo=* --noplugins"
+  args:
+    warn: false
+  changed_when: false
   ignore_errors: true
 
-- name: Display standard install results
+- name: Install RPM packages (using localinstall)
+  ansible.builtin.command: "yum localinstall -y {{ package_source_dir }}/{{ item | basename }} --disablerepo=* --nogpgcheck --noplugins {{ '--nodeps' if skip_dependencies else '' }}"
+  args:
+    warn: false
+  with_items:
+    - "{{ rpm_packages }}"
+  when: rpm_packages | length > 0 and localinstall_only | bool
+  register: rpm_install_result
+  ignore_errors: "{{ ignore_package_errors | default(false) }}"
+  changed_when: "'Nothing to do' not in rpm_install_result.stdout"
+
+- name: Display results of RPM installations
   ansible.builtin.debug:
     var: rpm_install_result
     verbosity: 1
-  when: not use_force_install_only | default(false)
-
-- name: Install individual RPM packages (forcing without repo dependency checks)
-  ansible.builtin.command: "rpm -ivh --nodeps {{ package_source_dir }}/{{ item | basename }}"
-  args:
-    creates: "/var/lib/rpm/Packages"
-  with_items:
-    - "{{ rpm_packages }}"
-  when: (rpm_packages | length > 0 and use_force_install | default(true)) and
-        (rpm_install_result.failed is defined or use_force_install_only | default(false))
-  register: rpm_force_install_result
-  ignore_errors: "{{ ignore_package_errors | default(false) }}"
-  
-- name: Display force install results
-  ansible.builtin.debug:
-    var: rpm_force_install_result
-    verbosity: 1
-  when: use_force_install | default(true) and
-        (rpm_install_result.failed is defined or use_force_install_only | default(false))
 
 - name: Extract and install mongosh
   block:
