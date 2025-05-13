@@ -1,0 +1,30 @@
+---
+repositories:
+  - name: mssql
+    description: "Microsoft SQL Server Repository"
+    repo_url: "https://packages.microsoft.com/config/rhel/9/prod.repo"
+    repo_file: "/etc/yum.repos.d/mssql-release.repo"
+  - name: postgresql
+    description: "PostgreSQL Yum Repository"
+    repo_rpm: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+
+# MSSQL Tools configuration
+install_mssql_tools: true
+mssql_tools_version: "18"
+mssql_packages:
+  - "mssql-tools{{ (mssql_tools_version != '') | ternary(mssql_tools_version, '') }}"
+  - "unixODBC"
+  - "unixODBC-devel"
+
+
+# PostgreSQL configuration
+install_postgresql: true
+postgresql_version: "17"
+postgresql_package_version: "1" 
+postgresql_init_db: true
+postgresql_enable_service: true
+postgresql_start_service: true
+
+# Output configuration
+show_detailed_output: true
+output_file: "/tmp/repo_installation_report.txt"

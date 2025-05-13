@@ -1,0 +1,127 @@
+# for client installation
+---
+- name: Get PostgreSQL repository from vars
+  set_fact:
+    pg_repo: "{{ repositories | selectattr('name', 'equalto', 'postgresql') | first }}"
+
+- name: Ensure download directory exists
+  file:
+    path: "{{ download_folder | default('/tmp/downloads') }}"
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Download PostgreSQL repository RPM
+  get_url:
+    url: "{{ pg_repo.repo_rpm }}"
+    dest: "{{ download_folder | default('/tmp/downloads') }}/{{ pg_repo.repo_rpm | basename }}"
+    mode: '0644'
+  become: true
+  register: rpm_download
+
+- name: "Install {{ pg_repo.description }} RPM from downloaded file"
+  dnf:
+    name: "{{ download_folder | default('/tmp/downloads') }}/{{ pg_repo.repo_rpm | basename }}"
+    state: present
+    disable_gpg_check: true
+  become: true
+  register: pg_repo_installation
+
+- name: "Write PostgreSQL repository installation status to report"
+  lineinfile:
+    path: "{{ output_file }}"
+    line: "{{ pg_repo.description }}: {{ 'INSTALLED' if pg_repo_installation.changed else 'ALREADY PRESENT' }}"
+  when: output_file is defined
+  become: true
+
+- name: Install PostgreSQL client
+  dnf:
+    name: "postgresql{{ postgresql_version }}"
+    state: present
+  become: true
+  register: pg_client_install
+
+- name: "Write PostgreSQL client installation status to report"
+  lineinfile:
+    path: "{{ output_file }}"
+    line: "PostgreSQL {{ postgresql_version }} client: {{ 'INSTALLED' if pg_client_install.changed else 'ALREADY PRESENT' }}"
+  when: output_file is defined
+  become: true
+
+- name: Check PostgreSQL client version
+  shell: |
+    echo "PostgreSQL client details:"
+    echo "--------------------------"
+    if command -v psql &>/dev/null; then
+      echo "Client Version: $(psql --version)"
+    else
+      echo "PostgreSQL client not installed correctly."
+    fi
+  register: pg_details
+  changed_when: false
+  when: show_detailed_output | bool
+  become: true
+
+- name: Display PostgreSQL client details
+  debug:
+    var: pg_details.stdout_lines
+    verbosity: 0
+  when: show_detailed_output | bool
+
+- name: "Write PostgreSQL client details to report"
+  blockinfile:
+    path: "{{ output_file }}"
+    marker: "# {mark} POSTGRESQL CLIENT DETAILS"
+    block: "{{ pg_details.stdout }}"
+  when: output_file is defined and show_detailed_output | bool
+  become: true
+
+ # for server installation 
+# ---
+# - name: Install PostgreSQL server
+#   dnf:
+#     name: "postgresql{{ postgresql_version }}"
+#     state: present
+#   register: pg_install
+
+# - name: Initialize PostgreSQL database
+#   command: "/usr/pgsql-{{ postgresql_version }}/bin/postgresql-{{ postgresql_version }}-setup initdb"
+#   args:
+#     creates: "/var/lib/pgsql/{{ postgresql_version }}/data/pg_hba.conf"
+#   when: postgresql_init_db | bool
+#   register: pg_init_db
+
+# - name: Enable PostgreSQL service
+#   systemd:
+#     name: "postgresql-{{ postgresql_version }}"
+#     enabled: true
+#   when: postgresql_enable_service | bool
+#   register: pg_enable_service
+
+# - name: Start PostgreSQL service
+#   systemd:
+#     name: "postgresql-{{ postgresql_version }}"
+#     state: started
+#   when: postgresql_start_service | bool
+#   register: pg_start_service
+
+# - name: Check PostgreSQL version and status
+#   shell: |
+#     echo "PostgreSQL details:"
+#     echo "-------------------"
+#     if command -v /usr/pgsql-{{ postgresql_version }}/bin/postgres &>/dev/null; then
+#       echo "Version: $(/usr/pgsql-{{ postgresql_version }}/bin/postgres --version)"
+#       echo "Status: $(systemctl status postgresql-{{ postgresql_version }} | grep Active:)"
+#       echo "Data directory: $(ls -ld /var/lib/pgsql/{{ postgresql_version }}/data)"
+#     else
+#       echo "PostgreSQL {{ postgresql_version }} not properly installed"
+#     fi
+#   register: pg_details
+#   changed_when: false
+#   when: show_detailed_output | bool
+
+# - name: Display PostgreSQL installation details
+#   debug:
+#     var: pg_details.stdout_lines
+#     verbosity: 0
+#   when: show_detailed_output | bool
