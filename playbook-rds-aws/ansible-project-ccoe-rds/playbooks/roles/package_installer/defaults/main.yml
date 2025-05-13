@@ -2,28 +2,28 @@
 packages:
   - name: mysql-shell
     file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
-    source_dir: "/home/ec2-user/.nuntawat/"
+    source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "mysql-shell --version"
   
   - name: mariadb
     file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-    source_dir: "/home/ec2-user/.nuntawat/"
+    source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "odbcinst -q -d"  
   
   - name: oracle-instantclient-basic
     file: "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
-    source_dir: "/home/ec2-user/.nuntawat/"
+    source_dir: "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "ls -la /usr/lib/oracle/23.7.0.25.01/client64/lib" 
 
   - name: my-mongosh
     file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
-    source_dir: "/home/ec2-user/.nuntawat/"
+    source_dir: "/tmp/aws-rds/"
     type: "tgz"
     extract_path: "/opt/my-app"
     version_check_cmd: "/opt/my-app/mongosh-2.5.0-linux-x64/bin/mongosh --version"
