@@ -1,37 +1,33 @@
 ---
-- name: Create directory to store RPMs
+- name: Ensure download directory exists on controller
   file:
     path: "{{ download_dir }}"
     state: directory
-    mode: '0755'
+  delegate_to: localhost
+  run_once: true
 
-- name: Download pgdg-redhat-repo-latest RPM
+- name: Download PostgreSQL repo RPM
   get_url:
-    url: "{{ pgdg_repo_url }}"
-    dest: "{{ download_dir }}/pgdg-redhat-repo-latest.noarch.rpm"
-    mode: '0644'
+    url: "{{ repo_rpm_url }}"
+    dest: "{{ download_dir }}/{{ repo_rpm_url | basename }}"
+  delegate_to: localhost
+  run_once: true
 
-- name: Install pgdg-redhat-repo-latest RPM
-  yum:
-    name: "{{ download_dir }}/pgdg-redhat-repo-latest.noarch.rpm"
-    state: present
-    disable_gpg_check: true
-
-- name: Disable default PostgreSQL module
-  command: dnf -qy module disable postgresql
-  args:
-    warn: false
-
-- name: Download PostgreSQL 17 Server RPMs
+- name: Download PostgreSQL client RPMs and dependencies
   command: >
-    dnf download
-    --resolve
-    --alldeps
-    --downloaddir={{ download_dir }}
-    postgresql17-server
-  register: dnf_download
-  changed_when: "'Complete!' in dnf_download.stdout"
+    dnf download --resolve --alldeps
+    --downloaddir {{ download_dir }}
+    {{ item }}
+  loop: "{{ client_packages }}"
+  delegate_to: localhost
+  run_once: true
 
-- name: Debug downloaded files
+- name: List downloaded RPM files
+  shell: ls -1 {{ download_dir }}
+  register: downloaded_files
+  delegate_to: localhost
+  run_once: true
+
+- name: Show what was downloaded
   debug:
-    var: dnf_download.stdout_lines
+    var: downloaded_files.stdout_lines
