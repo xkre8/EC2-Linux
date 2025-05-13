@@ -36,6 +36,13 @@ packages:
     disable_gpg_check: true
     # version_check_cmd: "rpm -q unixODBC"
 
+
+  - name: postgresql17-lib
+    file: "libicu-76.1-4.fc42.i686.rpm"
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+
   - name: postgresql17
     file: "postgresql17-17.4-1PGDG.rhel9.x86_64.rpm"
     source_dir: "/tmp/aws-rds/"
