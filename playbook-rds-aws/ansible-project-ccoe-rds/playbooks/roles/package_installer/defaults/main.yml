@@ -21,12 +21,12 @@ packages:
     disable_gpg_check: true
     version_check_cmd: "ls -la /usr/lib/oracle/23.7.0.25.01/client64/lib" 
 
-  - name: my-mongosh
-    file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
-    source_dir: "/tmp/aws-rds/"
-    type: "tgz"
-    extract_path: "/opt/my-app"
-    version_check_cmd: "/opt/my-app/mongosh-2.5.0-linux-x64/bin/mongosh --version"
+  # - name: my-mongosh
+  #   file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
+  #   source_dir: "/tmp/aws-rds/"
+  #   type: "tgz"
+  #   extract_path: "/opt/my-app"
+  #   version_check_cmd: "/opt/my-app/mongosh-2.5.0-linux-x64/bin/mongosh --version"
 
 show_detailed_output: true
 output_file: "/tmp/installation_report.txt"
