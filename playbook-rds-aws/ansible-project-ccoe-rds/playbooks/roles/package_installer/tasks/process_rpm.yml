@@ -52,9 +52,13 @@
   register: rpm_install
   when: rpm_check.rc != 0
 
-- name: Debug package_source_path
+- name: Debug package details before installation
   debug:
-    msg: "Installing package from {{ package_source_path }}"
+    msg: 
+      - "Package name: {{ package_item.name }}"
+      - "Package file: {{ package_item.file }}"
+      - "Source dir: {{ package_item.source_dir | default(packages[0].source_dir) }}"
+      - "Full path: {{ package_source_path }}"
 
 
 - name: Get installed package information
