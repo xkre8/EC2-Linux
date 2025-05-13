@@ -1,16 +1,44 @@
 ---
-- name: Create temporary download directory
+- name: Create required directories
   file:
-    path: "{{ temp_download_dir }}"
+    path: "{{ item }}"
     state: directory
     mode: '0755'
-  when: packages | selectattr('url', 'defined') | list | length > 0
+  loop:
+    - "{{ temp_download_dir }}"
+  when: temp_download_dir is defined
 
-- name: Process each package
-  include_tasks: "process_{{ item.type | default('rpm') }}.yml"
-  loop: "{{ packages }}"
+# Process RPM packages with dependency handling
+- name: Find packages with no dependencies first
+  set_fact:
+    independent_packages: "{{ packages | selectattr('requires', 'undefined') | list }}"
+    dependent_packages: "{{ packages | selectattr('requires', 'defined') | list }}"
+
+- name: Install independent packages first (RPM only)
+  include_tasks: process_rpm.yml
+  loop: "{{ independent_packages | selectattr('type', 'equalto', 'rpm') | list }}"
   loop_control:
     loop_var: package_item
-    label: "{{ package_item.name }} ({{ package_item.type | default('rpm') }})"
+  when: independent_packages | length > 0
 
+- name: Install dependent packages in order (RPM only)
+  include_tasks: process_rpm.yml
+  loop: "{{ dependent_packages | selectattr('type', 'equalto', 'rpm') | list }}"
+  loop_control:
+    loop_var: package_item
+  when: dependent_packages | length > 0
 
+# Process TGZ packages (these usually don't have dependencies)
+- name: Process TGZ packages
+  include_tasks: process_rpm.yml
+  loop: "{{ packages | selectattr('type', 'equalto', 'tgz') | list }}"
+  loop_control:
+    loop_var: package_item
+
+- name: Generate summary message
+  set_fact:
+    installation_summary: "Installation completed for {{ packages | length }} packages"
+
+- name: Display installation summary
+  debug:
+    msg: "{{ installation_summary }}"

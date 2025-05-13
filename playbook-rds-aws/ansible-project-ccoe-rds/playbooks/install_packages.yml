@@ -56,39 +56,8 @@
 #       ansible.builtin.import_role:
 #         name: package_installer
 ---
-- name: Install RPM packages in offline mode
+- name: Install all packages in correct order
   hosts: all
   become: true
-  vars_files:
-    - main.yml
-  
-  tasks:
-    - name: Create temp directory if needed
-      file:
-        path: "{{ temp_download_dir }}"
-        state: directory
-        mode: '0755'
-      when: temp_download_dir is defined
-
-    - name: Install RPM packages (RPM only)
-      include_tasks: process_rpm_offline.yml
-      loop: "{{ packages | selectattr('type', 'equalto', 'rpm') | list }}"
-      loop_control:
-        loop_var: package_item
-      
-    - name: Process TGZ packages
-      include_tasks: process_rpm_offline.yml
-      loop: "{{ packages | selectattr('type', 'equalto', 'tgz') | list }}"
-      loop_control:
-        loop_var: package_item
-    
-    - name: Generate installation report
-      template:
-        src: templates/report.j2
-        dest: "{{ output_file }}"
-      when: output_file is defined
-      
-    - name: Display completion message
-      debug:
-        msg: "All packages have been processed. Check {{ output_file }} for details."
-      when: output_file is defined
+  roles:
+    - role: package_installer

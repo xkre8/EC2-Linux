@@ -1,83 +1,115 @@
-# main.yml
 ---
+# Default variables for package installation
+
+# Default source directory for packages
+packages_default_source_dir: "/tmp/aws-rds"
+
+# Whether to show detailed output
+show_detailed_output: true
+
+# Default output file for installation report
+output_file: "/tmp/installation_report.txt"
+
+# Temporary download directory (for future use if needed)
+temp_download_dir: "/tmp/downloads"
+
+# Global flag to disable GPG check for all packages
+disable_gpg_check: true
+
+# Package definitions
 packages:
   - name: mysql-shell
     file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
+    source_dir: "{{ packages_default_source_dir }}"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "mysql-shell --version"
+    ignore_deps: false
+
+  - name: unixODBC
+    file: "unixODBC-2.3.11-1.rh.x86_64.rpm"
+    source_dir: "{{ packages_default_source_dir }}"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q unixODBC"
+    ignore_deps: false
+
+  - name: unixODBC-devel
+    file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
+    source_dir: "{{ packages_default_source_dir }}"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q unixODBC-devel"
+    ignore_deps: false
+    requires:
+      - unixODBC
 
   - name: msodbcsql18
     file: "msodbcsql18-18.1.1.1-1.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
+    source_dir: "{{ packages_default_source_dir }}"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "rpm -q msodbcsql18"
+    ignore_deps: false
 
-  - name: mssql-tools
+  - name: mssql-tools18
     file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
+    source_dir: "{{ packages_default_source_dir }}"
     type: "rpm"
     disable_gpg_check: true
-    version_check_cmd: "rpm -q mssql-tools"
+    version_check_cmd: "rpm -q mssql-tools18"
+    ignore_deps: false
+    requires:
+      - unixODBC
+      - msodbcsql18
 
-  - name: mssql-devel
-    file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    # version_check_cmd: "rpm -q unixODBC-devel"
-
-  - name: mssql-unixODBC
-    file: "unixODBC-2.3.11-1.rh.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    # version_check_cmd: "rpm -q unixODBC"
-
-
-  - name: postgresql17-lib
+  - name: libicu
     file: "libicu-76.1-4.fc42.i686.rpm"
-    source_dir: "/tmp/aws-rds/"
+    source_dir: "{{ packages_default_source_dir }}"
     type: "rpm"
     disable_gpg_check: true
+    version_check_cmd: "rpm -q libicu"
+    ignore_deps: false
+
+  - name: postgresql17-libs
+    file: "postgresql17-libs-17.0-1PGDG.rhel9.x86_64.rpm"
+    source_dir: "{{ packages_default_source_dir }}"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q postgresql17-libs"
+    ignore_deps: false
 
   - name: postgresql17
     file: "postgresql17-17.4-1PGDG.rhel9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
+    source_dir: "{{ packages_default_source_dir }}"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "psql --version"
-
-  - name: postgresql17-lib
-    file: "postgresql17-libs-17.0-1PGDG.rhel9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-
-  - name: mariadb
+    ignore_deps: false
+    requires:
+      - postgresql17-libs
+  
+  - name: mariadb-connector-odbc
     file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
+    source_dir: "{{ packages_default_source_dir }}"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "odbcinst -q -d"
-
+    ignore_deps: false
+    requires:
+      - unixODBC
+  
   - name: oracle-instantclient-basic
     file: "oracle-instantclient-basic-23.7.0.25.01-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
+    source_dir: "{{ packages_default_source_dir }}"
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "ls -la /usr/lib/oracle/23.7.0.25.01/client64/lib"
+    ignore_deps: false
 
-  - name: my-mongosh
+  - name: mongosh
     file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
-    source_dir: "/tmp/aws-rds/"
+    source_dir: "{{ packages_default_source_dir }}"
     type: "tgz"
-    extract_path: "/tmp/aws-rds/"
-    version_check_cmd: "/opt/my-app/mongosh-2.5.0-linux-x64/bin/mongosh --version"
-
-show_detailed_output: true
-output_file: "/tmp/installation_report.txt"
-temp_download_dir: "/tmp/downloads"
-disable_gpg_check: false
+    extract_path: "/opt"
+    version_check_cmd: "/opt/mongosh-2.5.0-linux-x64/bin/mongosh --version"
