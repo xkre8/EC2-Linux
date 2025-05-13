@@ -18,6 +18,22 @@
     mode: '0755'
   when: package_temp_dir != package_source_dir
 
+- name: Check package dependencies
+  ansible.builtin.shell: "rpm -qpR {{ package_source_dir }}/{{ item | basename }}"
+  register: dependencies
+  with_items:
+    - "{{ rpm_packages }}"
+  changed_when: false
+  ignore_errors: true
+  check_mode: no
+  when: check_dependencies | default(true)
+
+- name: Display package dependencies
+  ansible.builtin.debug:
+    var: dependencies
+    verbosity: 1
+  when: check_dependencies | default(true)
+
 - name: Install prerequisite packages
   ansible.builtin.dnf:
     name:
@@ -25,21 +41,43 @@
       - gzip
     state: present
 
-- name: Install RPM packages
+- name: Install RPM packages (standard method - attempt first)
   ansible.builtin.dnf:
     name: "{{ package_source_dir }}/{{ item | basename }}"
     state: present
     disable_gpg_check: true
+    disable_repo: "*"
+    disablerepo: "*"
+    localinstall: true
   with_items:
     - "{{ rpm_packages }}"
-  when: rpm_packages | length > 0
+  when: rpm_packages | length > 0 and not use_force_install_only | default(false)
   register: rpm_install_result
-  ignore_errors: "{{ ignore_package_errors | default(false) }}"
+  ignore_errors: true
 
-- name: Display results of RPM installations
+- name: Display standard install results
   ansible.builtin.debug:
     var: rpm_install_result
     verbosity: 1
+  when: not use_force_install_only | default(false)
+
+- name: Install individual RPM packages (forcing without repo dependency checks)
+  ansible.builtin.command: "rpm -ivh --nodeps {{ package_source_dir }}/{{ item | basename }}"
+  args:
+    creates: "/var/lib/rpm/Packages"
+  with_items:
+    - "{{ rpm_packages }}"
+  when: (rpm_packages | length > 0 and use_force_install | default(true)) and
+        (rpm_install_result.failed is defined or use_force_install_only | default(false))
+  register: rpm_force_install_result
+  ignore_errors: "{{ ignore_package_errors | default(false) }}"
+  
+- name: Display force install results
+  ansible.builtin.debug:
+    var: rpm_force_install_result
+    verbosity: 1
+  when: use_force_install | default(true) and
+        (rpm_install_result.failed is defined or use_force_install_only | default(false))
 
 - name: Extract and install mongosh
   block:

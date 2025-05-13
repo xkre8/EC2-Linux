@@ -24,5 +24,3 @@ package_source_dir: "/tmp/aws-rds"
 
 # Temporary directory to store extracted files during installation
 package_temp_dir: "/tmp/db_packages_install"
-
-# roles/db_packages/defaults/main.yml
