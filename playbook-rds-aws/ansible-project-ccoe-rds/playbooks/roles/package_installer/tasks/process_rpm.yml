@@ -34,10 +34,9 @@
     # Handle RPM packages
     - name: Install RPM package (offline mode)
       command: >
-        rpm -ivh {{ '--nodeps' if package_item.ignore_deps | default(false) else '' }}
-        {{ '--force' if package_item.force | default(false) else '' }}
+        rpm -ivh {{ '--nodeps' if package_item.ignore_deps | default(true) else '' }}
+        {{ '--force' if package_item.force | default(true) else '' }}
         {{ '--noscripts' if package_item.noscripts | default(false) else '' }}
-        {{ '--nodeps' if package_item.ignore_deps | default(false) else '' }}
         {{ package_source_path }}
       register: rpm_install
       when: 
