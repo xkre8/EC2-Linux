@@ -8,7 +8,7 @@ packages:
     version_check_cmd: "mysql-shell --version"
 
   - name: mssql-tools
-    file: "mssql-tools-17.10.1.1-1.x86_64.rpm"
+    file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
     source_dir:  "/tmp/aws-rds/"
     type: "rpm"
     disable_gpg_check: true
