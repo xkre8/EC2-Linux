@@ -1,90 +1,119 @@
 ---
 - block:
-    - name: Download RPM package if URL is provided
-      get_url:
-        url: "{{ package_item.url }}"
-        dest: "{{ temp_download_dir }}/{{ package_item.file }}"
-        mode: '0644'
-      register: download_result
-      when: package_item.url is defined
-  rescue:
-    - name: Report download failure
+    - name: Set source path for local package
+      set_fact:
+        package_source_path: "{{ package_item.source_dir | default(packages[0].source_dir) }}/{{ package_item.file }}"
+
+    - name: Check if RPM file exists
+      stat:
+        path: "{{ package_source_path }}"
+      register: rpm_file_check
+
+    - name: Fail if RPM file does not exist
       fail:
-        msg: "Failed to download {{ package_item.file }} from {{ package_item.url }}"
+        msg: "RPM file {{ package_source_path }} does not exist!"
+      when: not rpm_file_check.stat.exists
 
-- name: Set source path for local package
-  set_fact:
-    package_source_path: "{{ package_item.source_dir | default(packages[0].source_dir) }}/{{ package_item.file }}"
-  when: package_item.url is not defined
+    - name: Check if RPM is already installed
+      command: rpm -q {{ package_item.name }}
+      register: rpm_check
+      failed_when: false
+      changed_when: false
+      
+    - name: Debug package check
+      debug:
+        msg: "Package {{ package_item.name }} status: {{ rpm_check.rc }}"
+      
+    - name: Check dependencies (for RPM type only)
+      command: rpm -qpR {{ package_source_path }}
+      register: rpm_deps
+      changed_when: false
+      when: package_item.type == "rpm" and rpm_check.rc != 0
+      
+    - name: Display dependencies
+      debug:
+        msg: "{{ rpm_deps.stdout_lines }}"
+      when: package_item.type == "rpm" and rpm_check.rc != 0
 
-- name: Set source path for downloaded package
-  set_fact:
-    package_source_path: "{{ temp_download_dir }}/{{ package_item.file }}"
-  when: package_item.url is defined
+    # Install RPM using rpm command directly instead of yum to work offline
+    - name: Install RPM package (offline mode)
+      command: rpm -ivh {{ '--nodeps' if package_item.ignore_deps | default(false) else '' }} {{ package_source_path }}
+      register: rpm_install
+      when: 
+        - rpm_check.rc != 0
+        - package_item.type == "rpm"
+      failed_when: 
+        - rpm_install.rc != 0 
+        - "'already installed' not in rpm_install.stderr"
+      changed_when: rpm_install.rc == 0
 
-- name: Check if RPM file exists
-  stat:
-    path: "{{ package_source_path }}"
-  register: rpm_file_check
+    # For TGZ files (like MongoDB)
+    - name: Create directory for TGZ extraction
+      file:
+        path: "{{ package_item.extract_path | default('/opt') }}"
+        state: directory
+        mode: '0755'
+      when: 
+        - package_item.type == "tgz"
+        - rpm_check.rc != 0
 
-- name: Fail if RPM file does not exist
-  fail:
-    msg: "RPM file {{ package_source_path }} does not exist!"
-  when: not rpm_file_check.stat.exists
+    - name: Extract TGZ package
+      unarchive:
+        src: "{{ package_source_path }}"
+        dest: "{{ package_item.extract_path | default('/opt') }}"
+        remote_src: yes
+      when: 
+        - package_item.type == "tgz"
+        - rpm_check.rc != 0
 
-- name: Check if RPM is already installed
-  command: rpm -q {{ package_item.name }}
-  register: rpm_check
-  failed_when: false
-  changed_when: false
+    - name: Debug extraction
+      debug:
+        msg: "Extracted {{ package_source_path }} to {{ package_item.extract_path | default('/opt') }}"
+      when: package_item.type == "tgz"
 
-- name: Import GPG key if provided
-  rpm_key:
-    key: "{{ package_item.gpg_key }}"
-    state: present
-  when: package_item.gpg_key is defined
+    - name: Get installed package information
+      shell: |
+        if [ "{{ package_item.type }}" == "rpm" ]; then
+          echo "===== PACKAGE INFORMATION ====="
+          rpm -qi {{ package_item.name }} | grep -E 'Name|Version|Release|Description'
+          echo ""
+          echo "===== SERVICE STATUS ====="
+          if systemctl list-unit-files | grep -q {{ package_item.name }}; then
+            systemctl status {{ package_item.name }} 2>/dev/null || echo "Service exists but may not be running"
+          else
+            echo "No systemd service found for {{ package_item.name }}"
+            # Try to check for other services that might have been installed by this RPM
+            echo "Looking for related services..."
+            rpm -ql {{ package_item.name }} | grep -E '\.service$' | while read service_file; do
+              service_name=$(basename "$service_file")
+              echo "Found service file: $service_name"
+              systemctl status ${service_name} 2>/dev/null || echo "Service ${service_name} exists but may not be running"
+            done
+          fi
+          echo ""
+          echo "===== FILES INSTALLED ====="
+          rpm -ql {{ package_item.name }} | head -10
+          if [ $(rpm -ql {{ package_item.name }} | wc -l) -gt 10 ]; then
+            echo "... and $(( $(rpm -ql {{ package_item.name }} | wc -l) - 10 )) more files"
+          fi
+        elif [ "{{ package_item.type }}" == "tgz" ]; then
+          echo "===== TGZ EXTRACTION INFO ====="
+          echo "Extracted to: {{ package_item.extract_path | default('/opt') }}"
+          ls -la {{ package_item.extract_path | default('/opt') }}/{{ package_item.file | regex_replace('\.tgz$', '') }}"
+        fi
+        echo ""
+      register: package_info
+      changed_when: false
+      when: show_detailed_output | bool
 
-- name: Install RPM package
-  yum:
-    name: "{{ package_source_path }}"
-    state: present
-    disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
-  register: rpm_install
-  when: rpm_check.rc != 0
-  
-- name: Debug package_source_path
-  debug:
-    msg: "Installing package from {{ package_source_path }}"
+    - name: Run version check command
+      shell: "{{ package_item.version_check_cmd }}"
+      register: version_check
+      changed_when: false
+      failed_when: false
+      when: package_item.version_check_cmd is defined
 
-- name: Get installed package information
-  shell: |
-    echo "===== PACKAGE INFORMATION ====="
-    rpm -qi {{ package_item.name }} | grep -E 'Name|Version|Release|Description'
-    echo ""
-    echo "===== SERVICE STATUS ====="
-    if systemctl list-unit-files | grep -q {{ package_item.name }}; then
-      systemctl status {{ package_item.name }} 2>/dev/null || echo "Service exists but may not be running"
-    else
-      echo "No systemd service found for {{ package_item.name }}"
-      # Try to check for other services that might have been installed by this RPM
-      echo "Looking for related services..."
-      rpm -ql {{ package_item.name }} | grep -E '\.service$' | while read service_file; do
-        service_name=$(basename "$service_file")
-        echo "Found service file: $service_name"
-        systemctl status ${service_name} 2>/dev/null || echo "Service ${service_name} exists but may not be running"
-      done
-    fi
-    echo ""
-    echo "===== FILES INSTALLED ====="
-    rpm -ql {{ package_item.name }} | head -10
-    if [ $(rpm -ql {{ package_item.name }} | wc -l) -gt 10 ]; then
-      echo "... and $(( $(rpm -ql {{ package_item.name }} | wc -l) - 10 )) more files"
-    fi
-    echo ""
-  register: package_info
-  changed_when: false
-  when: show_detailed_output | bool
-
-
-- name: Include version check
-  include_tasks: check_version.yml
+    - name: Show version check result
+      debug:
+        msg: "Version check result: {{ version_check.stdout }}"
+      when: package_item.version_check_cmd is defined
