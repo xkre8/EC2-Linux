@@ -5,8 +5,8 @@ repositories:
     repo_url: "https://packages.microsoft.com/config/rhel/9/prod.repo"
     repo_file: "/etc/yum.repos.d/mssql-release.repo"
   - name: postgresql
-    description: "PostgreSQL Yum Repository"
-    repo_rpm: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+    description: PostgreSQL Yum Repository
+    repo_rpm: https://download.postgresql.org/pub/repos/yum/17/redhat/rhel-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 
 # MSSQL Tools configuration
 install_mssql_tools: true
