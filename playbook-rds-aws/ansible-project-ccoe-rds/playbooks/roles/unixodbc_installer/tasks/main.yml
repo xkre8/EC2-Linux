@@ -1,0 +1,83 @@
+---
+# playbook-rds-aws/ansible-project-ccoe-rds/playbooks/roles/unixodbc_installer/tasks/main.yml
+
+- name: Ensure source directory exists
+  ansible.builtin.stat:
+    path: "{{ source_dir }}"
+  register: src_dir
+
+- name: Fail if source directory doesn't exist
+  ansible.builtin.fail:
+    msg: "Source directory {{ source_dir }} does not exist!"
+  when: not src_dir.stat.exists
+
+- name: Check for unixODBC package files
+  ansible.builtin.stat:
+    path: "{{ source_dir }}/{{ item.file }}"
+  register: package_files
+  loop: "{{ unixodbc_packages }}"
+
+- name: Fail if any package file is missing
+  ansible.builtin.fail:
+    msg: "Package file {{ source_dir }}/{{ item.item.file }} does not exist!"
+  when: not item.stat.exists
+  loop: "{{ package_files.results }}"
+  loop_control:
+    label: "{{ item.item.file }}"
+
+- name: Check if unixODBC packages are already installed
+  ansible.builtin.shell: "{{ item.version_check_cmd }}"
+  register: package_check
+  failed_when: false
+  changed_when: false
+  loop: "{{ unixodbc_packages }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Install unixODBC packages together
+  ansible.builtin.dnf:
+    name:
+      - "{{ source_dir }}/{{ unixodbc_packages[0].file }}"
+      - "{{ source_dir }}/{{ unixodbc_packages[1].file }}"
+    state: present
+    disable_repo: "*"
+    disable_gpg_check: "{{ disable_gpg_check | default(false) }}"
+  register: unixodbc_install
+  when: package_check.results[0].rc != 0 or package_check.results[1].rc != 0
+
+- name: Get installed package information
+  ansible.builtin.shell: |
+    echo "===== PACKAGE INFORMATION ====="
+    rpm -qi {{ item.name }} | grep -E 'Name|Version|Release|Description'
+    echo ""
+    echo "===== FILES INSTALLED ====="
+    rpm -ql {{ item.name }} | head -10
+    if [ $(rpm -ql {{ item.name }} | wc -l) -gt 10 ]; then
+      echo "... and $(( $(rpm -ql {{ item.name }} | wc -l) - 10 )) more files"
+    fi
+    echo ""
+  register: package_info
+  changed_when: false
+  loop: "{{ unixodbc_packages }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: show_detailed_output | bool
+
+- name: Write installation report to file
+  ansible.builtin.copy:
+    content: |
+      UnixODBC Packages Installation Report
+      ====================================
+      Date: {{ ansible_date_time.date }}
+      Time: {{ ansible_date_time.time }}
+      Host: {{ ansible_hostname }}
+      
+      Installation Status: {{ 'Success' if unixodbc_install.changed else 'Already installed' }}
+      
+      Package Details:
+      {% for result in package_info.results %}
+      {{ result.stdout }}
+      {% endfor %}
+    dest: "{{ output_file }}"
+    mode: '0644'
+  when: show_detailed_output | bool

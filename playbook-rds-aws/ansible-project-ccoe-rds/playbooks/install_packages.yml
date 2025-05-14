@@ -49,12 +49,11 @@
     #   ansible.builtin.copy:
     #     content: "Downloaded files in {{ download_path }}:\n{% for file in downloaded_files.files %}{{ file.path }}\n{% endfor %}"
     #     dest: "/tmp/downloaded_files_report.txt"
+    - name: Install SQL Server tools
+      ansible.builtin.import_role:
+        name: unixodbc_installer
+
 
     - name: Using role to install
       ansible.builtin.import_role:
         name: package_installer
-
-
-    - name: Install SQL Server tools
-      ansible.builtin.import_role:
-        name: sql_server_tools
