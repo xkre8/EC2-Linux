@@ -1,39 +1,68 @@
 ---
 packages:
-  - name: mysql-shell
-    file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    version_check_cmd: "sudo rpm -q mysql-shell"
+  # - name: mysql-shell
+  #   file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "sudo rpm -q mysql-shell"
   
-  - name: mariadb
-    file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    version_check_cmd: "sudo rpm -q mariadb-connector-odbc"  
+  # - name: mariadb
+  #   file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "sudo rpm -q mariadb-connector-odbc"  
   
-  - name: oracle-instantclient-basic
-    file: "oracle-instantclient-basic-23.8.0.25.04-1.el9.x86_64.rpm"
-    source_dir: "/tmp/aws-rds/"
-    type: "rpm"
-    disable_gpg_check: true
-    version_check_cmd: "sudo dnf list --installed oracle-instantclient-basic" 
+  # - name: oracle-instantclient-basic
+  #   file: "oracle-instantclient-basic-23.8.0.25.04-1.el9.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds/"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "sudo dnf list --installed oracle-instantclient-basic" 
    
-  - name: postgresql17-libs
-    file: "postgresql17-libs-17.5-1PGDG.rhel9.x86_64.rpm"
+  # - name: postgresql17-libs
+  #   file: "postgresql17-libs-17.5-1PGDG.rhel9.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "rpm -q postgresql17-libs"
+   
+  # - name: postgresql17
+  #   file: "postgresql17-17.5-1PGDG.rhel9.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "psql --version"
+
+
+  - name: mongodb-mongosh	
+    file: "mongodb-mongosh-2.5.0.x86_64.rpm"
     source_dir: "/tmp/aws-rds"
     type: "rpm"
     disable_gpg_check: true
-    version_check_cmd: "rpm -q postgresql17-libs"
-   
-  - name: postgresql17
-    file: "postgresql17-17.5-1PGDG.rhel9.x86_64.rpm"
+    version_check_cmd: "rpm -qi mongodb-mongosh"
+
+  - name: mongodb-mongosh-shared	
+    file: "mongodb-mongosh-shared-openssl3-2.5.0.x86_64.rpm"
     source_dir: "/tmp/aws-rds"
     type: "rpm"
     disable_gpg_check: true
-    version_check_cmd: "psql --version"
+    version_check_cmd: "rpm -qi mongodb-mongosh-shared-openssl3"
+
+  - name: msodbcsql18
+    file: "msodbcsql18-18.4.1.1-1.x86_64.rpm"
+    source_dir: "/tmp/aws-rds"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -qi msodbcsql18"
+
+  - name: mssql-tools18
+    file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
+    source_dir: "/tmp/aws-rds"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -qi mssql-tools18"
 
   # - name: my-mongosh
   #   file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
