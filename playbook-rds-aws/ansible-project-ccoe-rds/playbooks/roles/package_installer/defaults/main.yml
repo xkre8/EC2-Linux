@@ -1,75 +1,75 @@
 ---
 packages:
-  # - name: mysql-shell
-  #   file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
-  #   source_dir: "/tmp/aws-rds/"
-  #   type: "rpm"
-  #   disable_gpg_check: true
-  #   version_check_cmd: "sudo rpm -q mysql-shell"
+  - name: mysql-shell
+    file: "mysql-shell-8.4.5-1.el9.x86_64.rpm"
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "sudo rpm -q mysql-shell"
   
-  # - name: mariadb
-  #   file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
-  #   source_dir: "/tmp/aws-rds/"
-  #   type: "rpm"
-  #   disable_gpg_check: true
-  #   version_check_cmd: "sudo rpm -q mariadb-connector-odbc"  
+  - name: mariadb
+    file: "mariadb-connector-odbc-3.2.5-1.el9.x86_64.rpm"
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "sudo rpm -q mariadb-connector-odbc"  
   
-  # - name: oracle-instantclient-basic
-  #   file: "oracle-instantclient-basic-23.8.0.25.04-1.el9.x86_64.rpm"
-  #   source_dir: "/tmp/aws-rds/"
-  #   type: "rpm"
-  #   disable_gpg_check: true
-  #   version_check_cmd: "sudo dnf list --installed oracle-instantclient-basic" 
+  - name: oracle-instantclient-basic
+    file: "oracle-instantclient-basic-23.8.0.25.04-1.el9.x86_64.rpm"
+    source_dir: "/tmp/aws-rds/"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "sudo dnf list --installed oracle-instantclient-basic" 
    
-  # - name: postgresql17-libs
-  #   file: "postgresql17-libs-17.5-1PGDG.rhel9.x86_64.rpm"
-  #   source_dir: "/tmp/aws-rds"
-  #   type: "rpm"
-  #   disable_gpg_check: true
-  #   version_check_cmd: "rpm -q postgresql17-libs"
+  - name: postgresql17-libs
+    file: "postgresql17-libs-17.5-1PGDG.rhel9.x86_64.rpm"
+    source_dir: "/tmp/aws-rds"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -q postgresql17-libs"
 
-  # - name: unixODBC
-  #   file: "unixODBC-2.3.11-1.rh.x86_64.rpm"
-  #   source_dir: "/tmp/aws-rds"
-  #   type: "rpm"
-  #   disable_gpg_check: true
-  #   version_check_cmd: "rpm -qi unixODBC"
-  #   order: 1 
+  - name: unixODBC
+    file: "unixODBC-2.3.11-1.rh.x86_64.rpm"
+    source_dir: "/tmp/aws-rds"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -qi unixODBC"
+    order: 1 
 
-  # - name: unixODBC-devel
-  #   file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
-  #   source_dir: "/tmp/aws-rds"
-  #   type: "rpm"
-  #   disable_gpg_check: true
-  #   version_check_cmd: "rpm -qi unixODBC-devel"
-  #   order: 2
-  #   dependencies:
-  #     - unixODBC
+  - name: unixODBC-devel
+    file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
+    source_dir: "/tmp/aws-rds"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -qi unixODBC-devel"
+    order: 2
+    dependencies:
+      - unixODBC
 
-  # - name: msodbcsql18
-  #   file: "msodbcsql18-18.4.1.1-1.x86_64.rpm"
-  #   source_dir: "/tmp/aws-rds"
-  #   type: "rpm"
-  #   disable_gpg_check: true
-  #   version_check_cmd: "rpm -qi msodbcsql18"
-  #   order: 3
-  #   dependencies:
-  #     - unixODBC
-  #   environment:
-  #     ACCEPT_EULA: "Y"
+  - name: msodbcsql18
+    file: "msodbcsql18-18.4.1.1-1.x86_64.rpm"
+    source_dir: "/tmp/aws-rds"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -qi msodbcsql18"
+    order: 3
+    dependencies:
+      - unixODBC
+    environment:
+      ACCEPT_EULA: "Y"
 
-  # - name: mssql-tools18
-  #   file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
-  #   source_dir: "/tmp/aws-rds"
-  #   type: "rpm"
-  #   disable_gpg_check: true
-  #   version_check_cmd: "rpm -qi mssql-tools18"
-  #   order: 4
-  #   dependencies:
-  #     - unixODBC
-  #     - msodbcsql18
-  #   environment:
-  #     ACCEPT_EULA: "Y"
+  - name: mssql-tools18
+    file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
+    source_dir: "/tmp/aws-rds"
+    type: "rpm"
+    disable_gpg_check: true
+    version_check_cmd: "rpm -qi mssql-tools18"
+    order: 4
+    dependencies:
+      - unixODBC
+      - msodbcsql18
+    environment:
+      ACCEPT_EULA: "Y"
 
   - name: my-mongosh
     file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
