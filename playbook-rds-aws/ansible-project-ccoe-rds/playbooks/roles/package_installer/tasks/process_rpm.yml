@@ -33,7 +33,7 @@
   when: not rpm_file_check.stat.exists
 
 - name: Check if RPM is already installed
-  command: rpm -q {{ package_item.name }}
+  command: "{{ package_item.version_check_cmd | default('rpm -q ' + package_item.name) }}"
   register: rpm_check
   failed_when: false
   changed_when: false
@@ -44,13 +44,35 @@
     state: present
   when: package_item.gpg_key is defined
 
-- name: Install RPM package
+- name: Set installation environment variables
+  set_fact:
+    install_environment: "{{ package_item.environment | default({}) }}"
+
+- name: Debug environment variables
+  debug:
+    msg: "Environment variables for {{ package_item.name }}: {{ install_environment }}"
+  when: install_environment | length > 0
+
+- name: Install RPM package with environment variables
+  environment: "{{ install_environment }}"
   yum:
     name: "{{ package_source_path }}"
     state: present
     disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
   register: rpm_install
-  when: rpm_check.rc != 0
+  when: 
+    - rpm_check.rc != 0
+    - install_environment | length > 0
+
+- name: Install RPM package without environment variables
+  yum:
+    name: "{{ package_source_path }}"
+    state: present
+    disable_gpg_check: "{{ package_item.disable_gpg_check | default(disable_gpg_check | default(false)) }}"
+  register: rpm_install
+  when: 
+    - rpm_check.rc != 0
+    - install_environment | length == 0
 
 - name: Debug current directory
   command: pwd
@@ -69,7 +91,7 @@
       - "Package file: {{ package_item.file }}"
       - "Source dir: {{ package_item.source_dir | default(packages[0].source_dir) }}"
       - "Full path: {{ package_source_path }}"
-
+      - "Environment: {{ install_environment | default({}) }}"
 
 - name: Get installed package information
   shell: |
@@ -99,7 +121,6 @@
   register: package_info
   changed_when: false
   when: show_detailed_output | bool
-
 
 - name: Include version check
   include_tasks: check_version.yml

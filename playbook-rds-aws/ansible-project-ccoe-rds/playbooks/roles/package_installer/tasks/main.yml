@@ -1,16 +1,37 @@
 ---
-- name: Create temporary download directory
+- name: Sort packages by order
+  set_fact:
+    sorted_packages: "{{ packages | sort(attribute='order') }}"
+  when: 
+    - packages | selectattr('order', 'defined') | list | length > 0
+
+- name: Use original package list if no order defined
+  set_fact:
+    sorted_packages: "{{ packages }}"
+  when:
+    - packages | selectattr('order', 'defined') | list | length == 0
+
+- name: Display packages installation order
+  debug:
+    msg: "Installation order: {{ sorted_packages | map(attribute='name') | list }}"
+
+- name: Create temp download directory if needed
   file:
     path: "{{ temp_download_dir }}"
     state: directory
     mode: '0755'
-  when: packages | selectattr('url', 'defined') | list | length > 0
+  when: sorted_packages | selectattr('url', 'defined') | list | length > 0
 
-- name: Process each package
-  include_tasks: "process_{{ item.type | default('rpm') }}.yml"
-  loop: "{{ packages }}"
-  loop_control:
-    loop_var: package_item
-    label: "{{ package_item.name }} ({{ package_item.type | default('rpm') }})"
+- name: Process RPM packages in order
+  include_tasks: process_rpm.yml
+  vars:
+    package_item: "{{ item }}"
+  with_items: "{{ sorted_packages }}"
+  when: item.type | default('rpm') == 'rpm'
 
-
+- name: Process TGZ packages
+  include_tasks: process_tgz.yml
+  vars:
+    package_item: "{{ item }}"
+  with_items: "{{ sorted_packages }}"
+  when: item.type | default('rpm') == 'tgz'

@@ -33,7 +33,8 @@ packages:
     source_dir: "/tmp/aws-rds"
     type: "rpm"
     disable_gpg_check: true
-    version_check_cmd: "rpm -qi unixODBC" 
+    version_check_cmd: "rpm -qi unixODBC"
+    order: 1 
 
   - name: unixODBC-devel
     file: "unixODBC-devel-2.3.11-1.rh.x86_64.rpm"
@@ -41,6 +42,9 @@ packages:
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "rpm -qi unixODBC-devel"
+    order: 2
+    dependencies:
+      - unixODBC
 
   - name: msodbcsql18
     file: "msodbcsql18-18.4.1.1-1.x86_64.rpm"
@@ -48,6 +52,11 @@ packages:
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "rpm -qi msodbcsql18"
+    order: 3
+    dependencies:
+      - unixODBC
+    environment:
+      ACCEPT_EULA: "Y"
 
   - name: mssql-tools18
     file: "mssql-tools18-18.4.1.1-1.x86_64.rpm"
@@ -55,6 +64,12 @@ packages:
     type: "rpm"
     disable_gpg_check: true
     version_check_cmd: "rpm -qi mssql-tools18"
+    order: 4
+    dependencies:
+      - unixODBC
+      - msodbcsql18
+    environment:
+      ACCEPT_EULA: "Y"
 
   # - name: my-mongosh
   #   file: "mongosh-2.5.0-linux-x64-openssl3.tgz"
@@ -67,6 +82,5 @@ show_detailed_output: true
 output_file: "/tmp/installation_report.txt"
 
 temp_download_dir: "/tmp/downloads"
-
 
 disable_gpg_check: false
