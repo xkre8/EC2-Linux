@@ -53,3 +53,8 @@
     - name: Using role to install
       ansible.builtin.import_role:
         name: package_installer
+
+
+    - name: Install SQL Server tools
+      ansible.builtin.import_role:
+        name: sql_server_tools
