@@ -34,12 +34,12 @@ packages:
   #   type: "rpm"
   #   disable_gpg_check: true
   #   version_check_cmd: "psql --version"
-  - name: mongodb-mongosh-shared	
-    file: "mongodb-mongosh-shared-openssl3-2.5.0.x86_64.rpm"
-    source_dir: "/tmp/aws-rds"
-    type: "rpm"
-    disable_gpg_check: true
-    version_check_cmd: "rpm -qi mongodb-mongosh-shared-openssl3"
+  # - name: mongodb-mongosh-shared	
+  #   file: "mongodb-mongosh-shared-openssl3-2.5.0.x86_64.rpm"
+  #   source_dir: "/tmp/aws-rds"
+  #   type: "rpm"
+  #   disable_gpg_check: true
+  #   version_check_cmd: "rpm -qi mongodb-mongosh-shared-openssl3"
 
   # - name: mongodb-mongosh	
   #   file: "mongodb-mongosh-2.5.0.x86_64.rpm"
